@@ -1,0 +1,325 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1420" height="1020" viewBox="0 0 1420 1020" role="img" aria-labelledby="title desc">
+<title id="title">Inference workflows and shared prediction code</title>
+<desc id="desc">The sample CLI command calls generate.py. It loads a checkpoint, prepares requested length, charge and hydrophobicity conditions, calls predict.py with DDIM and saves sequences.fasta, candidates.jsonl and generation.json. The generate CLI command calls design.py. It reads the target through targets.py, generates Complexa scaffolds through complexa.py or accepts supplied scaffolds, ranks and selects them, and uses Foldseek to encode their 3Di. checkpoint.py loads the design model and its configuration. inpainting.py optionally builds a kept-residue seed and checks that candidates preserve it. redesign_batching.py batches candidates across scaffolds, while structural_guidance.py wraps the U-Net to steer structure. The design route calls predict.py with DDPM, folds accepted candidates with their target using ESMFold2 and ranks the results, saving sequences, scores, metadata and structures. Both workflows share predict.py, which delegates reverse sampling to diffusion using the model callback, decodes vectors with dataset/decode.py, and returns Prediction containing both vectors and decoded records. provider.py optionally keeps the Complexa and folding services loaded between runs. complexa_service.py manages complexa_worker.py; folding_service.py manages esmfold2_worker.py. The same predict.py tab is repeated at its two call sites and expanded below.</desc>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.3" markerHeight="5.3" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#92989b"/></marker>
+<marker id="blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.3" markerHeight="5.3" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#567ca5"/></marker>
+<marker id="gold" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.3" markerHeight="5.3" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#ac8632"/></marker>
+</defs><style>text{font-family:"DejaVu Sans",Arial,sans-serif;fill:#303a45;} .mono{font-family:"DejaVu Sans Mono",Consolas,monospace;}</style><rect width="1420" height="1020" fill="#fff"/>
+<text x="37" y="28" font-size="18" text-anchor="start" style="fill:#7a838b" class="mono">mubind sample</text>
+<path d="M24 54Q24 48 30 48H161.135Q167.135 48 167.135 54V82H1390Q1396 82 1396 88V240Q1396 246 1390 246H30Q24 246 24 240Z" fill="#f6f5f1" stroke="#d5d3ca" stroke-width="1.2"/>
+<text x="38" y="71" font-size="17" text-anchor="start" style="fill:#303a45" class="mono" font-weight="700">generate.py</text>
+<text x="58" y="119" font-size="18" text-anchor="start" style="fill:#303a45">checkpoint + properties</text>
+<rect x="58" y="139" width="76" height="27" rx="5" fill="#edf3f9" stroke="#c1d1df" stroke-width="1.1"/>
+<text x="96.0" y="158" font-size="14" text-anchor="middle" style="fill:#567ca5">length</text>
+<rect x="144" y="139" width="79" height="27" rx="5" fill="#edf3f9" stroke="#c1d1df" stroke-width="1.1"/>
+<text x="183.5" y="158" font-size="14" text-anchor="middle" style="fill:#567ca5">charge</text>
+<rect x="233" y="139" width="122" height="27" rx="5" fill="#edf3f9" stroke="#c1d1df" stroke-width="1.1"/>
+<text x="294.0" y="158" font-size="14" text-anchor="middle" style="fill:#567ca5">hydrophobicity</text>
+<text x="206" y="213" font-size="14" text-anchor="middle" style="fill:#7a838b" class="mono">config.py</text>
+<polyline points="365,153 493,153" fill="none" stroke="#92989b" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M497 106Q497 100 503 100H623.85Q629.85 100 629.85 106V134H761Q767 134 767 140V204Q767 210 761 210H503Q497 210 497 204Z" fill="#f0f5f9" stroke="#b8cddd" stroke-width="1.2"/>
+<text x="511" y="123" font-size="17" text-anchor="start" style="fill:#567ca5" class="mono" font-weight="700">predict.py</text>
+<text x="632" y="169" font-size="22" text-anchor="middle" style="fill:#567ca5">DDIM</text>
+<polyline points="767,153 843,153" fill="none" stroke="#92989b" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="933" y="147" font-size="20" text-anchor="middle" style="fill:#567ca5" class="mono">M A E K L A …</text>
+<text x="933" y="179" font-size="17" text-anchor="middle" style="fill:#303a45">sequences</text>
+<polyline points="1035,153 1101,153" fill="none" stroke="#92989b" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="1105" y="103" width="267" height="113" rx="5" fill="#fff" stroke="#d4d5cf" stroke-width="1.1"/>
+<text x="1238" y="131" font-size="15" text-anchor="middle" style="fill:#303a45" class="mono">sequences.fasta</text>
+<text x="1238" y="164" font-size="15" text-anchor="middle" style="fill:#303a45" class="mono">candidates.jsonl</text>
+<text x="1238" y="197" font-size="15" text-anchor="middle" style="fill:#303a45" class="mono">generation.json</text>
+<text x="37" y="285" font-size="18" text-anchor="start" style="fill:#7a838b" class="mono">mubind generate</text>
+<path d="M24 312Q24 306 30 306H140.565Q146.565 306 146.565 312V340H1390Q1396 340 1396 346V638Q1396 644 1390 644H30Q24 644 24 638Z" fill="#f6f5f1" stroke="#d5d3ca" stroke-width="1.2"/>
+<text x="38" y="329" font-size="17" text-anchor="start" style="fill:#303a45" class="mono" font-weight="700">design.py</text>
+<path d="M46 366Q46 360 52 360H160.75Q166.75 360 166.75 366V394H198Q204 394 204 400V486Q204 492 198 492H52Q46 492 46 486Z" fill="#f6f5f1" stroke="#d5d3ca" stroke-width="1.2"/>
+<text x="60" y="383" font-size="15" text-anchor="start" style="fill:#303a45" class="mono" font-weight="700">targets.py</text>
+<polyline points="88,416 105,402 131,415 149,407 158,431 141,445 118,439 100,455 87,439 108,426 135,434" fill="none" stroke="#97a8b4" stroke-width="3" stroke-linejoin="round"/>
+<text x="125" y="478" font-size="15" text-anchor="middle" style="fill:#303a45" class="mono">target.pdb</text>
+<polyline points="204,436 241,436" fill="none" stroke="#92989b" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M245 366Q245 360 251 360H368.825Q374.825 360 374.825 366V394H433Q439 394 439 400V486Q439 492 433 492H251Q245 492 245 486Z" fill="#f6f5f1" stroke="#d5d3ca" stroke-width="1.2"/>
+<text x="259" y="383" font-size="15" text-anchor="start" style="fill:#303a45" class="mono" font-weight="700">complexa.py</text>
+<polyline points="295,416 312,402 338,415 356,407 365,431 348,445 325,439 307,455 294,439 315,426 342,434" fill="none" stroke="#97a8b4" stroke-width="3" stroke-linejoin="round"/>
+<polyline points="361,453 373,442 362,434 374,424 363,415" fill="none" stroke="#567ca5" stroke-width="3" stroke-linejoin="round"/>
+<text x="342" y="478" font-size="16" text-anchor="middle" style="fill:#303a45">scaffolds</text>
+<text x="342" y="355" font-size="14" text-anchor="middle" style="fill:#7a838b">new or supplied</text>
+<polyline points="439,436 484,436" fill="none" stroke="#92989b" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="575" y="403" font-size="18" text-anchor="middle" style="fill:#303a45">rank · select</text>
+<text x="575" y="435" font-size="16" text-anchor="middle" style="fill:#ac8632">Foldseek → 3Di</text>
+<rect x="527.00" y="450.00" width="8.00" height="3.50" fill="#b5cde3" stroke="#fff" stroke-width=".6"/>
+<rect x="535.00" y="450.00" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="543.00" y="450.00" width="8.00" height="3.50" fill="#9fbfdc" stroke="#fff" stroke-width=".6"/>
+<rect x="551.00" y="450.00" width="8.00" height="3.50" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="559.00" y="450.00" width="8.00" height="3.50" fill="#b5cde3" stroke="#fff" stroke-width=".6"/>
+<rect x="567.00" y="450.00" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="575.00" y="450.00" width="8.00" height="3.50" fill="#9fbfdc" stroke="#fff" stroke-width=".6"/>
+<rect x="583.00" y="450.00" width="8.00" height="3.50" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="591.00" y="450.00" width="8.00" height="3.50" fill="#b5cde3" stroke="#fff" stroke-width=".6"/>
+<rect x="599.00" y="450.00" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="607.00" y="450.00" width="8.00" height="3.50" fill="#9fbfdc" stroke="#fff" stroke-width=".6"/>
+<rect x="615.00" y="450.00" width="8.00" height="3.50" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="527.00" y="453.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="535.00" y="453.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="543.00" y="453.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="551.00" y="453.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="559.00" y="453.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="567.00" y="453.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="575.00" y="453.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="583.00" y="453.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="591.00" y="453.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="599.00" y="453.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="607.00" y="453.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="615.00" y="453.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="527.00" y="457.00" width="8.00" height="3.50" fill="#9fbfdc" stroke="#fff" stroke-width=".6"/>
+<rect x="535.00" y="457.00" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="543.00" y="457.00" width="8.00" height="3.50" fill="#b5cde3" stroke="#fff" stroke-width=".6"/>
+<rect x="551.00" y="457.00" width="8.00" height="3.50" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="559.00" y="457.00" width="8.00" height="3.50" fill="#9fbfdc" stroke="#fff" stroke-width=".6"/>
+<rect x="567.00" y="457.00" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="575.00" y="457.00" width="8.00" height="3.50" fill="#b5cde3" stroke="#fff" stroke-width=".6"/>
+<rect x="583.00" y="457.00" width="8.00" height="3.50" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="591.00" y="457.00" width="8.00" height="3.50" fill="#9fbfdc" stroke="#fff" stroke-width=".6"/>
+<rect x="599.00" y="457.00" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="607.00" y="457.00" width="8.00" height="3.50" fill="#b5cde3" stroke="#fff" stroke-width=".6"/>
+<rect x="615.00" y="457.00" width="8.00" height="3.50" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="527.00" y="460.50" width="8.00" height="3.50" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="535.00" y="460.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="543.00" y="460.50" width="8.00" height="3.50" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="551.00" y="460.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="559.00" y="460.50" width="8.00" height="3.50" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="567.00" y="460.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="575.00" y="460.50" width="8.00" height="3.50" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="583.00" y="460.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="591.00" y="460.50" width="8.00" height="3.50" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="599.00" y="460.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="607.00" y="460.50" width="8.00" height="3.50" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="615.00" y="460.50" width="8.00" height="3.50" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="527.00" y="464.00" width="8.00" height="3.50" fill="#e4c465" stroke="#fff" stroke-width=".6"/>
+<rect x="535.00" y="464.00" width="8.00" height="3.50" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="543.00" y="464.00" width="8.00" height="3.50" fill="#dcb749" stroke="#fff" stroke-width=".6"/>
+<rect x="551.00" y="464.00" width="8.00" height="3.50" fill="#f3e7b1" stroke="#fff" stroke-width=".6"/>
+<rect x="559.00" y="464.00" width="8.00" height="3.50" fill="#e4c465" stroke="#fff" stroke-width=".6"/>
+<rect x="567.00" y="464.00" width="8.00" height="3.50" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="575.00" y="464.00" width="8.00" height="3.50" fill="#dcb749" stroke="#fff" stroke-width=".6"/>
+<rect x="583.00" y="464.00" width="8.00" height="3.50" fill="#f3e7b1" stroke="#fff" stroke-width=".6"/>
+<rect x="591.00" y="464.00" width="8.00" height="3.50" fill="#e4c465" stroke="#fff" stroke-width=".6"/>
+<rect x="599.00" y="464.00" width="8.00" height="3.50" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="607.00" y="464.00" width="8.00" height="3.50" fill="#dcb749" stroke="#fff" stroke-width=".6"/>
+<rect x="615.00" y="464.00" width="8.00" height="3.50" fill="#f3e7b1" stroke="#fff" stroke-width=".6"/>
+<rect x="527.00" y="467.50" width="8.00" height="3.50" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="535.00" y="467.50" width="8.00" height="3.50" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="543.00" y="467.50" width="8.00" height="3.50" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="551.00" y="467.50" width="8.00" height="3.50" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="559.00" y="467.50" width="8.00" height="3.50" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="567.00" y="467.50" width="8.00" height="3.50" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="575.00" y="467.50" width="8.00" height="3.50" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="583.00" y="467.50" width="8.00" height="3.50" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="591.00" y="467.50" width="8.00" height="3.50" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="599.00" y="467.50" width="8.00" height="3.50" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="607.00" y="467.50" width="8.00" height="3.50" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="615.00" y="467.50" width="8.00" height="3.50" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="527" y="450" width="96" height="21" rx="0" fill="none" stroke="#a7b3bb" stroke-width="0.8"/>
+<text x="575" y="496" font-size="14" text-anchor="middle" style="fill:#567ca5">+ property targets</text>
+<polyline points="667,436 725,436" fill="none" stroke="#92989b" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M729 366Q729 360 735 360H855.85Q861.85 360 861.85 366V394H934Q940 394 940 400V486Q940 492 934 492H735Q729 492 729 486Z" fill="#f0f5f9" stroke="#b8cddd" stroke-width="1.2"/>
+<text x="743" y="383" font-size="17" text-anchor="start" style="fill:#567ca5" class="mono" font-weight="700">predict.py</text>
+<text x="834" y="435" font-size="22" text-anchor="middle" style="fill:#567ca5">DDPM</text>
+<polyline points="940,436 982,436" fill="none" stroke="#92989b" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="986" y="395" width="178" height="82" rx="5" fill="#fff" stroke="#d4d5cf" stroke-width="1.1"/>
+<text x="1075.0" y="430.5" font-size="18" text-anchor="middle" style="fill:#303a45">ESMFold2</text>
+<text x="1075.0" y="453.5" font-size="18" text-anchor="middle" style="fill:#303a45">fold + rank</text>
+<polyline points="1164,436 1198,436" fill="none" stroke="#92989b" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="1202" y="360" width="170" height="132" rx="5" fill="#fff" stroke="#d4d5cf" stroke-width="1.1"/>
+<text x="1287" y="389" font-size="14" text-anchor="middle" style="fill:#303a45" class="mono">FASTA + PDBs</text>
+<text x="1287" y="417" font-size="14" text-anchor="middle" style="fill:#303a45" class="mono">scores.csv</text>
+<text x="1287" y="445" font-size="14" text-anchor="middle" style="fill:#303a45" class="mono">results.json</text>
+<text x="1287" y="473" font-size="14" text-anchor="middle" style="fill:#303a45" class="mono">run.json</text>
+<path d="M46 542Q46 536 52 536H187.975Q193.975 536 193.975 542V570H289Q295 570 295 576V614Q295 620 289 620H52Q46 620 46 614Z" fill="#f6f5f1" stroke="#d5d3ca" stroke-width="1.2"/>
+<text x="60" y="559" font-size="15" text-anchor="start" style="fill:#303a45" class="mono" font-weight="700">checkpoint.py</text>
+<text x="170.5" y="595" font-size="16" text-anchor="middle" style="fill:#303a45">weights + saved config</text>
+<path d="M323 542Q323 536 329 536H464.975Q470.975 536 470.975 542V570H600Q606 570 606 576V614Q606 620 600 620H329Q323 620 323 614Z" fill="#f6f5f1" stroke="#d5d3ca" stroke-width="1.2"/>
+<text x="337" y="559" font-size="15" text-anchor="start" style="fill:#303a45" class="mono" font-weight="700">inpainting.py</text>
+<text x="464.5" y="595" font-size="16" text-anchor="middle" style="fill:#303a45">optional kept residues</text>
+<path d="M634 542Q634 536 640 536H857.65Q863.65 536 863.65 542V570H941Q947 570 947 576V614Q947 620 941 620H640Q634 620 634 614Z" fill="#f6f5f1" stroke="#d5d3ca" stroke-width="1.2"/>
+<text x="648" y="559" font-size="15" text-anchor="start" style="fill:#303a45" class="mono" font-weight="700">structural_guidance.py</text>
+<text x="790.5" y="595" font-size="16" text-anchor="middle" style="fill:#303a45">steer the U-Net</text>
+<path d="M975 542Q975 536 981 536H1100Q1106 536 1106 542V570H1366Q1372 570 1372 576V614Q1372 620 1366 620H981Q975 620 975 614Z" fill="#f6f5f1" stroke="#d5d3ca" stroke-width="1.2"/>
+<text x="989" y="559" font-size="15" text-anchor="start" style="fill:#303a45" class="mono" font-weight="700">redesign.py</text>
+<text x="1173.5" y="595" font-size="16" text-anchor="middle" style="fill:#303a45">batch across scaffolds</text>
+<path d="M24 704Q24 698 30 698H150.85Q156.85 698 156.85 704V732H962Q968 732 968 738V994Q968 1000 962 1000H30Q24 1000 24 994Z" fill="#f0f5f9" stroke="#b8cddd" stroke-width="1.2"/>
+<text x="38" y="721" font-size="17" text-anchor="start" style="fill:#567ca5" class="mono" font-weight="700">predict.py</text>
+<text x="496" y="762" font-size="18" text-anchor="middle" style="fill:#303a45">model + schedule + conditions</text>
+<path d="M48 796Q48 790 54 790H197.84Q203.84 790 203.84 796V824H543Q549 824 549 830V949Q549 955 543 955H54Q48 955 48 949Z" fill="#f6f5f1" stroke="#d5d3ca" stroke-width="1.2"/>
+<text x="62" y="813" font-size="16" text-anchor="start" style="fill:#303a45" class="mono" font-weight="700">../diffusion/</text>
+<text x="298" y="851" font-size="18" text-anchor="middle" style="fill:#303a45">DDPM / DDIM sampling loop</text>
+<rect x="67.00" y="876.00" width="6.00" height="4.17" fill="#d8e0e5" stroke="#fff" stroke-width=".6"/>
+<rect x="73.00" y="876.00" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="79.00" y="876.00" width="6.00" height="4.17" fill="#c2cdd6" stroke="#fff" stroke-width=".6"/>
+<rect x="85.00" y="876.00" width="6.00" height="4.17" fill="#edf0f1" stroke="#fff" stroke-width=".6"/>
+<rect x="91.00" y="876.00" width="6.00" height="4.17" fill="#d8e0e5" stroke="#fff" stroke-width=".6"/>
+<rect x="97.00" y="876.00" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="103.00" y="876.00" width="6.00" height="4.17" fill="#c2cdd6" stroke="#fff" stroke-width=".6"/>
+<rect x="109.00" y="876.00" width="6.00" height="4.17" fill="#edf0f1" stroke="#fff" stroke-width=".6"/>
+<rect x="115.00" y="876.00" width="6.00" height="4.17" fill="#d8e0e5" stroke="#fff" stroke-width=".6"/>
+<rect x="121.00" y="876.00" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="127.00" y="876.00" width="6.00" height="4.17" fill="#c2cdd6" stroke="#fff" stroke-width=".6"/>
+<rect x="133.00" y="876.00" width="6.00" height="4.17" fill="#edf0f1" stroke="#fff" stroke-width=".6"/>
+<rect x="67.00" y="880.17" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="73.00" y="880.17" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="79.00" y="880.17" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="85.00" y="880.17" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="91.00" y="880.17" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="97.00" y="880.17" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="103.00" y="880.17" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="109.00" y="880.17" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="115.00" y="880.17" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="121.00" y="880.17" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="127.00" y="880.17" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="133.00" y="880.17" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="67.00" y="884.33" width="6.00" height="4.17" fill="#c2cdd6" stroke="#fff" stroke-width=".6"/>
+<rect x="73.00" y="884.33" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="79.00" y="884.33" width="6.00" height="4.17" fill="#d8e0e5" stroke="#fff" stroke-width=".6"/>
+<rect x="85.00" y="884.33" width="6.00" height="4.17" fill="#edf0f1" stroke="#fff" stroke-width=".6"/>
+<rect x="91.00" y="884.33" width="6.00" height="4.17" fill="#c2cdd6" stroke="#fff" stroke-width=".6"/>
+<rect x="97.00" y="884.33" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="103.00" y="884.33" width="6.00" height="4.17" fill="#d8e0e5" stroke="#fff" stroke-width=".6"/>
+<rect x="109.00" y="884.33" width="6.00" height="4.17" fill="#edf0f1" stroke="#fff" stroke-width=".6"/>
+<rect x="115.00" y="884.33" width="6.00" height="4.17" fill="#c2cdd6" stroke="#fff" stroke-width=".6"/>
+<rect x="121.00" y="884.33" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="127.00" y="884.33" width="6.00" height="4.17" fill="#d8e0e5" stroke="#fff" stroke-width=".6"/>
+<rect x="133.00" y="884.33" width="6.00" height="4.17" fill="#edf0f1" stroke="#fff" stroke-width=".6"/>
+<rect x="67.00" y="888.50" width="6.00" height="4.17" fill="#edf0f1" stroke="#fff" stroke-width=".6"/>
+<rect x="73.00" y="888.50" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="79.00" y="888.50" width="6.00" height="4.17" fill="#edf0f1" stroke="#fff" stroke-width=".6"/>
+<rect x="85.00" y="888.50" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="91.00" y="888.50" width="6.00" height="4.17" fill="#edf0f1" stroke="#fff" stroke-width=".6"/>
+<rect x="97.00" y="888.50" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="103.00" y="888.50" width="6.00" height="4.17" fill="#edf0f1" stroke="#fff" stroke-width=".6"/>
+<rect x="109.00" y="888.50" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="115.00" y="888.50" width="6.00" height="4.17" fill="#edf0f1" stroke="#fff" stroke-width=".6"/>
+<rect x="121.00" y="888.50" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="127.00" y="888.50" width="6.00" height="4.17" fill="#edf0f1" stroke="#fff" stroke-width=".6"/>
+<rect x="133.00" y="888.50" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="67.00" y="892.67" width="6.00" height="4.17" fill="#d8e0e5" stroke="#fff" stroke-width=".6"/>
+<rect x="73.00" y="892.67" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="79.00" y="892.67" width="6.00" height="4.17" fill="#c2cdd6" stroke="#fff" stroke-width=".6"/>
+<rect x="85.00" y="892.67" width="6.00" height="4.17" fill="#edf0f1" stroke="#fff" stroke-width=".6"/>
+<rect x="91.00" y="892.67" width="6.00" height="4.17" fill="#d8e0e5" stroke="#fff" stroke-width=".6"/>
+<rect x="97.00" y="892.67" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="103.00" y="892.67" width="6.00" height="4.17" fill="#c2cdd6" stroke="#fff" stroke-width=".6"/>
+<rect x="109.00" y="892.67" width="6.00" height="4.17" fill="#edf0f1" stroke="#fff" stroke-width=".6"/>
+<rect x="115.00" y="892.67" width="6.00" height="4.17" fill="#d8e0e5" stroke="#fff" stroke-width=".6"/>
+<rect x="121.00" y="892.67" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="127.00" y="892.67" width="6.00" height="4.17" fill="#c2cdd6" stroke="#fff" stroke-width=".6"/>
+<rect x="133.00" y="892.67" width="6.00" height="4.17" fill="#edf0f1" stroke="#fff" stroke-width=".6"/>
+<rect x="67.00" y="896.83" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="73.00" y="896.83" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="79.00" y="896.83" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="85.00" y="896.83" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="91.00" y="896.83" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="97.00" y="896.83" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="103.00" y="896.83" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="109.00" y="896.83" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="115.00" y="896.83" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="121.00" y="896.83" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="127.00" y="896.83" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="133.00" y="896.83" width="6.00" height="4.17" fill="#e0e7eb" stroke="#fff" stroke-width=".6"/>
+<rect x="67" y="876" width="72" height="25" rx="0" fill="none" stroke="#a7b3bb" stroke-width="0.8"/>
+<text x="103" y="936" font-size="14" text-anchor="middle" style="fill:#7a838b">noise</text>
+<polyline points="140,889 186,889" fill="none" stroke="#92989b" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="190" y="867" width="199" height="42" rx="5" fill="#fff" stroke="#d4d5cf" stroke-width="1.1"/>
+<text x="289.5" y="894.0" font-size="14" text-anchor="middle" style="fill:#303a45">../model/unet.py</text>
+<polyline points="389,889 429,889" fill="none" stroke="#92989b" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="432.00" y="876.00" width="8.08" height="4.17" fill="#b5cde3" stroke="#fff" stroke-width=".6"/>
+<rect x="440.08" y="876.00" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="448.17" y="876.00" width="8.08" height="4.17" fill="#9fbfdc" stroke="#fff" stroke-width=".6"/>
+<rect x="456.25" y="876.00" width="8.08" height="4.17" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="464.33" y="876.00" width="8.08" height="4.17" fill="#b5cde3" stroke="#fff" stroke-width=".6"/>
+<rect x="472.42" y="876.00" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="480.50" y="876.00" width="8.08" height="4.17" fill="#9fbfdc" stroke="#fff" stroke-width=".6"/>
+<rect x="488.58" y="876.00" width="8.08" height="4.17" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="496.67" y="876.00" width="8.08" height="4.17" fill="#b5cde3" stroke="#fff" stroke-width=".6"/>
+<rect x="504.75" y="876.00" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="512.83" y="876.00" width="8.08" height="4.17" fill="#9fbfdc" stroke="#fff" stroke-width=".6"/>
+<rect x="520.92" y="876.00" width="8.08" height="4.17" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="432.00" y="880.17" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="440.08" y="880.17" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="448.17" y="880.17" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="456.25" y="880.17" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="464.33" y="880.17" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="472.42" y="880.17" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="480.50" y="880.17" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="488.58" y="880.17" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="496.67" y="880.17" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="504.75" y="880.17" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="512.83" y="880.17" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="520.92" y="880.17" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="432.00" y="884.33" width="8.08" height="4.17" fill="#9fbfdc" stroke="#fff" stroke-width=".6"/>
+<rect x="440.08" y="884.33" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="448.17" y="884.33" width="8.08" height="4.17" fill="#b5cde3" stroke="#fff" stroke-width=".6"/>
+<rect x="456.25" y="884.33" width="8.08" height="4.17" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="464.33" y="884.33" width="8.08" height="4.17" fill="#9fbfdc" stroke="#fff" stroke-width=".6"/>
+<rect x="472.42" y="884.33" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="480.50" y="884.33" width="8.08" height="4.17" fill="#b5cde3" stroke="#fff" stroke-width=".6"/>
+<rect x="488.58" y="884.33" width="8.08" height="4.17" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="496.67" y="884.33" width="8.08" height="4.17" fill="#9fbfdc" stroke="#fff" stroke-width=".6"/>
+<rect x="504.75" y="884.33" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="512.83" y="884.33" width="8.08" height="4.17" fill="#b5cde3" stroke="#fff" stroke-width=".6"/>
+<rect x="520.92" y="884.33" width="8.08" height="4.17" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="432.00" y="888.50" width="8.08" height="4.17" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="440.08" y="888.50" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="448.17" y="888.50" width="8.08" height="4.17" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="456.25" y="888.50" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="464.33" y="888.50" width="8.08" height="4.17" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="472.42" y="888.50" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="480.50" y="888.50" width="8.08" height="4.17" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="488.58" y="888.50" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="496.67" y="888.50" width="8.08" height="4.17" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="504.75" y="888.50" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="512.83" y="888.50" width="8.08" height="4.17" fill="#cedfeb" stroke="#fff" stroke-width=".6"/>
+<rect x="520.92" y="888.50" width="8.08" height="4.17" fill="#dfeaf2" stroke="#fff" stroke-width=".6"/>
+<rect x="432.00" y="892.67" width="8.08" height="4.17" fill="#e4c465" stroke="#fff" stroke-width=".6"/>
+<rect x="440.08" y="892.67" width="8.08" height="4.17" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="448.17" y="892.67" width="8.08" height="4.17" fill="#dcb749" stroke="#fff" stroke-width=".6"/>
+<rect x="456.25" y="892.67" width="8.08" height="4.17" fill="#f3e7b1" stroke="#fff" stroke-width=".6"/>
+<rect x="464.33" y="892.67" width="8.08" height="4.17" fill="#e4c465" stroke="#fff" stroke-width=".6"/>
+<rect x="472.42" y="892.67" width="8.08" height="4.17" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="480.50" y="892.67" width="8.08" height="4.17" fill="#dcb749" stroke="#fff" stroke-width=".6"/>
+<rect x="488.58" y="892.67" width="8.08" height="4.17" fill="#f3e7b1" stroke="#fff" stroke-width=".6"/>
+<rect x="496.67" y="892.67" width="8.08" height="4.17" fill="#e4c465" stroke="#fff" stroke-width=".6"/>
+<rect x="504.75" y="892.67" width="8.08" height="4.17" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="512.83" y="892.67" width="8.08" height="4.17" fill="#dcb749" stroke="#fff" stroke-width=".6"/>
+<rect x="520.92" y="892.67" width="8.08" height="4.17" fill="#f3e7b1" stroke="#fff" stroke-width=".6"/>
+<rect x="432.00" y="896.83" width="8.08" height="4.17" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="440.08" y="896.83" width="8.08" height="4.17" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="448.17" y="896.83" width="8.08" height="4.17" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="456.25" y="896.83" width="8.08" height="4.17" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="464.33" y="896.83" width="8.08" height="4.17" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="472.42" y="896.83" width="8.08" height="4.17" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="480.50" y="896.83" width="8.08" height="4.17" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="488.58" y="896.83" width="8.08" height="4.17" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="496.67" y="896.83" width="8.08" height="4.17" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="504.75" y="896.83" width="8.08" height="4.17" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="512.83" y="896.83" width="8.08" height="4.17" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="520.92" y="896.83" width="8.08" height="4.17" fill="#ead48a" stroke="#fff" stroke-width=".6"/>
+<rect x="432" y="876" width="97" height="25" rx="0" fill="none" stroke="#a7b3bb" stroke-width="0.8"/>
+<polyline points="415,889 415,929 292,929 292,909" fill="none" stroke="#92989b" stroke-width="1.6" stroke-linejoin="round" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+<polyline points="549,889 600,889" fill="none" stroke="#92989b" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M604 796Q604 790 610 790H821.6Q827.6 790 827.6 796V824H938Q944 824 944 830V949Q944 955 938 955H610Q604 955 604 949Z" fill="#f6f5f1" stroke="#d5d3ca" stroke-width="1.2"/>
+<text x="618" y="813" font-size="16" text-anchor="start" style="fill:#303a45" class="mono" font-weight="700">../dataset/decode.py</text>
+<text x="774" y="853" font-size="18" text-anchor="middle" style="fill:#303a45">nearest tokens</text>
+<text x="774" y="894" font-size="21" text-anchor="middle" style="fill:#567ca5" class="mono">M A E K L A …</text>
+<text x="774" y="929" font-size="16" text-anchor="middle" style="fill:#ac8632">3Di letters</text>
+<text x="496" y="984" font-size="16" text-anchor="middle" style="fill:#567ca5" class="mono">Prediction(vectors, decoded)</text>
+<path d="M1012 704Q1012 698 1018 698H1149.135Q1155.135 698 1155.135 704V732H1390Q1396 732 1396 738V994Q1396 1000 1390 1000H1018Q1012 1000 1012 994Z" fill="#f6f5f1" stroke="#d5d3ca" stroke-width="1.2"/>
+<text x="1026" y="721" font-size="17" text-anchor="start" style="fill:#303a45" class="mono" font-weight="700">provider.py</text>
+<text x="1204" y="762" font-size="17" text-anchor="middle" style="fill:#303a45">keep external models loaded</text>
+<rect x="1037" y="796" width="334" height="70" rx="5" fill="#fff" stroke="#d4d5cf" stroke-width="1.1"/>
+<text x="1204.0" y="825.5" font-size="16" text-anchor="middle" style="fill:#303a45">complexa_service.py</text>
+<text x="1204.0" y="848.5" font-size="16" text-anchor="middle" style="fill:#303a45">Complexa scaffolds</text>
+<text x="1204" y="884" font-size="13" text-anchor="middle" style="fill:#7a838b" class="mono">complexa_worker.py</text>
+<rect x="1037" y="903" width="334" height="58" rx="5" fill="#fff" stroke="#d4d5cf" stroke-width="1.1"/>
+<text x="1204.0" y="926.5" font-size="16" text-anchor="middle" style="fill:#303a45">folding_service.py</text>
+<text x="1204.0" y="949.5" font-size="16" text-anchor="middle" style="fill:#303a45">ESMFold2 structures</text>
+<text x="1204" y="984" font-size="13" text-anchor="middle" style="fill:#7a838b" class="mono">esmfold2_worker.py</text>
+</svg>

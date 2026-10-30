@@ -1,0 +1,112 @@
+{
+  "63": {
+    "id": "AF-A0A5C3M7W1-F1-model_v4.cif",
+    "path": "validation_180.pdb",
+    "sequence": "WTEAEKLQVEVMEKTQQLLGPAHPHALTSMNNLASTYWNQGRWTEAEKLQVEVMEKIQ",
+    "length": 58,
+    "sha256": "f282fff745fbbdc29d59591e4e95049dda39ac0404f2b7a920cb0687bf7fe8c0",
+    "coordinate_sequence_verified": true,
+    "provenance": "https://zenodo.org/records/14361626",
+    "extractor": "foldcomp 1.0.0",
+    "parent_max128_row": 180
+  },
+  "66": {
+    "id": "AF-A0A841ZB47-F1-model_v4.cif",
+    "path": "validation_193.pdb",
+    "sequence": "MNKDTLAIKGISDLLPGERALMKQFSSGEVDIDDYLHKHAYGDQICNLTRTFVVMKQDFILAILL",
+    "length": 65,
+    "sha256": "847e791b65bd3688fedb8e40e1ab825c27b366507656368682beb6bb3c4fb5e3",
+    "coordinate_sequence_verified": true,
+    "provenance": "https://zenodo.org/records/14361626",
+    "extractor": "foldcomp 1.0.0",
+    "parent_max128_row": 193
+  },
+  "51": {
+    "id": "AF-A0A4R2X175-F1-model_v4.cif",
+    "path": "validation_144.pdb",
+    "sequence": "MIEFKPSDGNEARSAEIALQLKKLDAEMASPNIKETRHAELNIIYRRLTAERDVLTSR",
+    "length": 58,
+    "sha256": "5c443867ea6f6dd38be48372a79aa6e62bafd6cf7c813cb9726cd51433a34143",
+    "coordinate_sequence_verified": true,
+    "provenance": "https://zenodo.org/records/14361626",
+    "extractor": "foldcomp 1.0.0",
+    "parent_max128_row": 144
+  },
+  "57": {
+    "id": "AF-A0A1Q9PHR5-F1-model_v4.cif",
+    "path": "validation_171.pdb",
+    "sequence": "QLNFFKANRDEFYTLNDGTEVLYRMSDPLEYGIIFQKDGLQYNIGIGNKKYLKKKFTVHHLLQIAELMN",
+    "length": 69,
+    "sha256": "48dff14a82b5b50b4398eb0529ccca13ecbda11e37ea16a6ab7393c22be47e42",
+    "coordinate_sequence_verified": true,
+    "provenance": "https://zenodo.org/records/14361626",
+    "extractor": "foldcomp 1.0.0",
+    "parent_max128_row": 171
+  },
+  "26": {
+    "id": "AF-R7V6F4-F1-model_v4.cif",
+    "path": "validation_079.pdb",
+    "sequence": "PPLPKNALAKINDFCKGLEFKVVYANDPITDHAAEVSVRCKGMVYHGLGRTKKMAKLDAAEKALRAM",
+    "length": 67,
+    "sha256": "11e0fdbd6955124917d9c09f677aa17063a77bdd40e1926d37315679c36ca153",
+    "coordinate_sequence_verified": true,
+    "provenance": "https://zenodo.org/records/14361626",
+    "extractor": "foldcomp 1.0.0",
+    "parent_max128_row": 79
+  },
+  "0": {
+    "id": "AF-A0A402BT90-F1-model_v4.cif",
+    "path": "validation_000.pdb",
+    "sequence": "MARSNKPVNPGAENALDRMKFEIASELGIAETVRQNGWATMTSADCGRVGGQMVRRMIEQYESSISNTQQ",
+    "length": 70,
+    "sha256": "cc965732aaa562bdbab68690bcabfe4aea03f7186d3daa0e5065c4641e910a5a",
+    "coordinate_sequence_verified": true,
+    "provenance": "https://zenodo.org/records/14361626",
+    "extractor": "foldcomp 1.0.0",
+    "parent_max128_row": 0
+  },
+  "2": {
+    "id": "AF-A0A7K4F708-F1-model_v4.cif",
+    "path": "validation_007.pdb",
+    "sequence": "MEDADNVKREHQRNKSEIVNIVKEMFELDKWGDLGYKEKLQEMIAKDEKLVQDVIREIKLKKGLE",
+    "length": 65,
+    "sha256": "f9c14f8b8451965bf66518e6ba9e80a4ae00f5d1a1ab4af23283c1a8e7e8ae20",
+    "coordinate_sequence_verified": true,
+    "provenance": "https://zenodo.org/records/14361626",
+    "extractor": "foldcomp 1.0.0",
+    "parent_max128_row": 7
+  },
+  "22": {
+    "id": "AF-A0A0G0RNR7-F1-model_v4.cif",
+    "path": "validation_075.pdb",
+    "sequence": "MLKRLKKIFEENKIWTTAGIVSAVLAVLVLILFKDEVDRFTFIMPIFAAFIVVGILTLADEEDKKEKKS",
+    "length": 69,
+    "sha256": "9bcda978d9b0c89f04071607bf8fc5f0a3642c9166309f07b51bf1509ed6af2b",
+    "coordinate_sequence_verified": true,
+    "provenance": "https://zenodo.org/records/14361626",
+    "extractor": "foldcomp 1.0.0",
+    "parent_max128_row": 75
+  },
+  "35": {
+    "id": "AF-A0A6B8RK86-F1-model_v4.cif",
+    "path": "validation_103.pdb",
+    "sequence": "MKLLSNEALQKAYSDAVSMQLDIAFIKLLFNEILERKMICDTLISDTTNLNSKDRIH",
+    "length": 57,
+    "sha256": "87adfd86d9ed9b26610d8a3767db448cdc92855f126797c5c5478311c31bcd32",
+    "coordinate_sequence_verified": true,
+    "provenance": "https://zenodo.org/records/14361626",
+    "extractor": "foldcomp 1.0.0",
+    "parent_max128_row": 103
+  },
+  "43": {
+    "id": "AF-D6SLS7-F1-model_v4.cif",
+    "path": "validation_119.pdb",
+    "sequence": "MSADTEALKKNILDLVLNLEPEEALDAFSGALREVLSRLEDEQRVRFVLALLEKGDEDKISSMVHL",
+    "length": 66,
+    "sha256": "da5a287aef964b061104a468ed9e71e4431e58c4b24465e0781e36dd1282e70d",
+    "coordinate_sequence_verified": true,
+    "provenance": "https://zenodo.org/records/14361626",
+    "extractor": "foldcomp 1.0.0",
+    "parent_max128_row": 119
+  }
+}

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="170" viewBox="0 0 680 170" role="img">
+<title>Disk space needed</title>
+<desc>About 61 GB of disk space is needed: model files and reference data 33.7 GB, Complexa environment 9.5 GB, ESMFold2 environment 7.9 GB, mubind environment 5.9 GB, and about 4 GB of installation caches.</desc>
+<style>
+text { font-family: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; dominant-baseline: central; }
+.th { font-size: 14px; font-weight: 500; fill: #6e7781; }
+.ts { font-size: 12px; font-weight: 400; fill: #6e7781; }
+</style>
+<defs>
+<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#BA7517" stroke-width="1.2" opacity="0.5"/></pattern>
+</defs>
+
+<text class="th" x="40" y="38">≈61 GB disk space needed</text>
+
+<rect x="33" y="57" width="537" height="62" rx="18" fill="#378ADD" opacity="0.13"/>
+<rect x="556" y="57" width="51" height="62" rx="16" fill="#EF9F27" opacity="0.25"/>
+
+<rect x="40" y="64" width="307.9" height="48" rx="8" fill="#185FA5"/>
+<text class="ts" x="194" y="80" text-anchor="middle" style="fill:#E6F1FB">Models &amp; reference data</text>
+<text class="th" x="194" y="97" text-anchor="middle" style="fill:#E6F1FB">33.7</text>
+
+<rect x="349.4" y="64" width="85.7" height="48" rx="6" fill="#378ADD"/>
+<text class="ts" x="392.25" y="80" text-anchor="middle" style="fill:#042C53">Complexa</text>
+<text class="th" x="392.25" y="97" text-anchor="middle" style="fill:#042C53">9.5</text>
+
+<rect x="436.6" y="64" width="71" height="48" rx="6" fill="#85B7EB"/>
+<text class="ts" x="472.1" y="80" text-anchor="middle" style="fill:#042C53">ESMFold2</text>
+<text class="th" x="472.1" y="97" text-anchor="middle" style="fill:#042C53">7.9</text>
+
+<rect x="509.1" y="64" width="52.7" height="48" rx="6" fill="#B5D4F4"/>
+<text class="ts" x="535.45" y="80" text-anchor="middle" style="fill:#0C447C">mubind</text>
+<text class="th" x="535.45" y="97" text-anchor="middle" style="fill:#0C447C">5.9</text>
+
+<rect x="563.3" y="64" width="36.7" height="48" rx="6" fill="#EF9F27"/>
+<rect x="563.3" y="64" width="36.7" height="48" rx="6" fill="url(#hatch)"/>
+<text class="th" x="581.65" y="88" text-anchor="middle" style="fill:#412402">≈4</text>
+
+<path d="M40 120 L40 126 L561.8 126 L561.8 120" fill="none" stroke="#378ADD" stroke-width="0.75"/>
+<text class="ts" x="300.9" y="142" text-anchor="middle">57 GB installed</text>
+
+<line x1="581.65" y1="120" x2="581.65" y2="130" stroke="#EF9F27" stroke-width="0.75"/>
+<text class="ts" x="600" y="142" text-anchor="end">install caches</text>
+</svg>

@@ -1,0 +1,1327 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="1027" viewBox="0 0 1240 1027" role="img">
+<title>How one MUbind training example is prepared</title>
+<desc>The data loader prepares each training example on the fly. Step 1 reads one stored protein, here a real 53-residue training protein, as amino-acid letters, 3Di structure letters and three properties, length, charge and hydrophobicity. Step 2 encodes it on a 70-position canvas, where every position becomes a column of 8 numbers, 6 for the amino acid and 2 for its 3Di letter, and the 17 positions after the protein are zeros. Step 3 hides part of it. A random design task picks residues to redesign, here two stretches, and some 3Di hints and properties are hidden too, here the 3Di of the second stretch and the charge. The prepared training example holds what the model is given and the complete protein it learns to produce.</desc>
+<style>
+text { font-family: "Segoe UI", "DejaVu Sans", system-ui, sans-serif; dominant-baseline: central; text-anchor: start; }
+.title { font-size: 24px; font-weight: 700; fill: #2f342e; }
+.lede { font-size: 15px; fill: #5c6159; }
+.head-t { font-size: 18px; font-weight: 700; fill: #2f342e; }
+.say { font-size: 14.5px; fill: #50554e; }
+.sub { font-size: 14px; font-weight: 700; fill: #2f342e; }
+.aa-t { font-size: 14px; fill: #3b5876; }
+.di-t { font-size: 14px; fill: #7d5f22; }
+.pr-t { font-size: 14px; fill: #3b5876; }
+.note { font-size: 12.5px; fill: #7a8078; }
+.let { font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace; font-size: 11px; text-anchor: middle; }
+.top-let { font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace; font-size: 10.5px; text-anchor: middle; fill: #6b7f95; }
+.num { fill: #ffffff; stroke: #8b9187; stroke-width: 1.5; }
+.num-t { font-size: 15px; font-weight: 700; fill: #2f342e; text-anchor: middle; }
+.spine { stroke: #cfd3ca; stroke-width: 1.5; }
+.panel { fill: #eceee7; stroke: #d6d9d0; }
+.cell { stroke: #ffffff; stroke-opacity: 0.7; stroke-width: 0.8; }
+.num-cell { stroke: #ffffff; stroke-opacity: 0.55; stroke-width: 0.6; }
+.zero { fill: #fbfbf8; stroke: #e3e5de; stroke-width: 0.6; }
+.edge { fill: none; stroke-width: 1; }
+.pad { fill: none; stroke: #b9beb4; stroke-width: 1; stroke-dasharray: 3 3; }
+.blank { fill: #fdfcf9; stroke: #b9beb4; stroke-width: 1; }
+.blank-t { font-size: 12px; font-style: italic; fill: #8a8f86; text-anchor: middle; }
+.prop { fill: #e0e8ef; stroke: #6385a8; }
+.prop-t { font-size: 13.5px; fill: #3b5876; }
+.gone { fill: #fdfcf9; stroke: #c8ccc2; stroke-dasharray: 3 2; }
+.gone-t { font-size: 13.5px; font-style: italic; fill: #9da196; }
+.brk { fill: none; stroke: #9aa096; stroke-width: 1.2; }
+.focus { fill: none; stroke: #2f342e; stroke-width: 1.6; }
+</style>
+<rect width="1240" height="1027" fill="#ffffff"/>
+
+<text class="title" x="48" y="50">How one training example is prepared</text>
+<text class="lede" x="48" y="82">Each time a protein is drawn for training, it becomes a fill-in-the-blanks exercise. The model sees part of it and learns to produce the rest.</text>
+
+<line class="spine" x1="56" y1="155" x2="56" y2="315"/>
+<line class="spine" x1="56" y1="345" x2="56" y2="577"/>
+<circle class="num" cx="56" cy="140" r="15"/>
+<text class="num-t" x="56" y="140.5">1</text>
+<text class="head-t" x="100" y="140">Read one protein</text>
+<text class="say" x="100" y="168">Each stored row holds one protein as amino-acid letters, the matching 3Di structure letters and three properties.</text>
+<rect class="cell" x="100" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="107.0" y="207.5" fill="#3b5876">M</text>
+<rect class="cell" x="114" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="121.0" y="207.5" fill="#3b5876">L</text>
+<rect class="cell" x="128" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="135.0" y="207.5" fill="#3b5876">D</text>
+<rect class="cell" x="142" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="149.0" y="207.5" fill="#3b5876">E</text>
+<rect class="cell" x="156" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="163.0" y="207.5" fill="#3b5876">I</text>
+<rect class="cell" x="170" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="177.0" y="207.5" fill="#3b5876">S</text>
+<rect class="cell" x="184" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="191.0" y="207.5" fill="#3b5876">S</text>
+<rect class="cell" x="198" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="205.0" y="207.5" fill="#3b5876">K</text>
+<rect class="cell" x="212" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="219.0" y="207.5" fill="#3b5876">E</text>
+<rect class="cell" x="226" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="233.0" y="207.5" fill="#3b5876">K</text>
+<rect class="cell" x="240" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="247.0" y="207.5" fill="#3b5876">A</text>
+<rect class="cell" x="254" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="261.0" y="207.5" fill="#3b5876">A</text>
+<rect class="cell" x="268" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="275.0" y="207.5" fill="#3b5876">I</text>
+<rect class="cell" x="282" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="289.0" y="207.5" fill="#3b5876">L</text>
+<rect class="cell" x="296" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="303.0" y="207.5" fill="#3b5876">I</text>
+<rect class="cell" x="310" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="317.0" y="207.5" fill="#3b5876">R</text>
+<rect class="cell" x="324" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="331.0" y="207.5" fill="#3b5876">T</text>
+<rect class="cell" x="338" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="345.0" y="207.5" fill="#3b5876">L</text>
+<rect class="cell" x="352" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="359.0" y="207.5" fill="#3b5876">D</text>
+<rect class="cell" x="366" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="373.0" y="207.5" fill="#3b5876">E</text>
+<rect class="cell" x="380" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="387.0" y="207.5" fill="#3b5876">G</text>
+<rect class="cell" x="394" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="401.0" y="207.5" fill="#3b5876">V</text>
+<rect class="cell" x="408" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="415.0" y="207.5" fill="#3b5876">A</text>
+<rect class="cell" x="422" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="429.0" y="207.5" fill="#3b5876">A</text>
+<rect class="cell" x="436" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="443.0" y="207.5" fill="#3b5876">K</text>
+<rect class="cell" x="450" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="457.0" y="207.5" fill="#3b5876">V</text>
+<rect class="cell" x="464" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="471.0" y="207.5" fill="#3b5876">I</text>
+<rect class="cell" x="478" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="485.0" y="207.5" fill="#3b5876">E</text>
+<rect class="cell" x="492" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="499.0" y="207.5" fill="#3b5876">Y</text>
+<rect class="cell" x="506" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="513.0" y="207.5" fill="#3b5876">M</text>
+<rect class="cell" x="520" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="527.0" y="207.5" fill="#3b5876">T</text>
+<rect class="cell" x="534" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="541.0" y="207.5" fill="#3b5876">A</text>
+<rect class="cell" x="548" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="555.0" y="207.5" fill="#3b5876">E</text>
+<rect class="cell" x="562" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="569.0" y="207.5" fill="#3b5876">E</text>
+<rect class="cell" x="576" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="583.0" y="207.5" fill="#3b5876">K</text>
+<rect class="cell" x="590" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="597.0" y="207.5" fill="#3b5876">E</text>
+<rect class="cell" x="604" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="611.0" y="207.5" fill="#3b5876">V</text>
+<rect class="cell" x="618" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="625.0" y="207.5" fill="#3b5876">L</text>
+<rect class="cell" x="632" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="639.0" y="207.5" fill="#3b5876">L</text>
+<rect class="cell" x="646" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="653.0" y="207.5" fill="#3b5876">R</text>
+<rect class="cell" x="660" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="667.0" y="207.5" fill="#3b5876">E</text>
+<rect class="cell" x="674" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="681.0" y="207.5" fill="#3b5876">I</text>
+<rect class="cell" x="688" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="695.0" y="207.5" fill="#3b5876">A</text>
+<rect class="cell" x="702" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="709.0" y="207.5" fill="#3b5876">K</text>
+<rect class="cell" x="716" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="723.0" y="207.5" fill="#3b5876">F</text>
+<rect class="cell" x="730" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="737.0" y="207.5" fill="#3b5876">R</text>
+<rect class="cell" x="744" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="751.0" y="207.5" fill="#3b5876">V</text>
+<rect class="cell" x="758" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="765.0" y="207.5" fill="#3b5876">Y</text>
+<rect class="cell" x="772" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="779.0" y="207.5" fill="#3b5876">K</text>
+<rect class="cell" x="786" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="793.0" y="207.5" fill="#3b5876">P</text>
+<rect class="cell" x="800" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="807.0" y="207.5" fill="#3b5876">E</text>
+<rect class="cell" x="814" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="821.0" y="207.5" fill="#3b5876">T</text>
+<rect class="cell" x="828" y="196" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="835.0" y="207.5" fill="#3b5876">L</text>
+<rect class="edge" x="100" y="196" width="742" height="22" stroke="#6788a7"/>
+<rect class="cell" x="100" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="107.0" y="235.5" fill="#7d5f22">D</text>
+<rect class="cell" x="114" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="121.0" y="235.5" fill="#7d5f22">P</text>
+<rect class="cell" x="128" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="135.0" y="235.5" fill="#7d5f22">P</text>
+<rect class="cell" x="142" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="149.0" y="235.5" fill="#7d5f22">P</text>
+<rect class="cell" x="156" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="163.0" y="235.5" fill="#7d5f22">Q</text>
+<rect class="cell" x="170" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="177.0" y="235.5" fill="#7d5f22">D</text>
+<rect class="cell" x="184" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="191.0" y="235.5" fill="#7d5f22">P</text>
+<rect class="cell" x="198" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="205.0" y="235.5" fill="#7d5f22">L</text>
+<rect class="cell" x="212" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="219.0" y="235.5" fill="#7d5f22">L</text>
+<rect class="cell" x="226" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="233.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="240" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="247.0" y="235.5" fill="#7d5f22">L</text>
+<rect class="cell" x="254" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="261.0" y="235.5" fill="#7d5f22">L</text>
+<rect class="cell" x="268" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="275.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="282" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="289.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="296" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="303.0" y="235.5" fill="#7d5f22">L</text>
+<rect class="cell" x="310" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="317.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="324" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="331.0" y="235.5" fill="#7d5f22">P</text>
+<rect class="cell" x="338" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="345.0" y="235.5" fill="#7d5f22">D</text>
+<rect class="cell" x="352" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="359.0" y="235.5" fill="#7d5f22">D</text>
+<rect class="cell" x="366" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="373.0" y="235.5" fill="#7d5f22">P</text>
+<rect class="cell" x="380" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="387.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="394" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="401.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="408" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="415.0" y="235.5" fill="#7d5f22">S</text>
+<rect class="cell" x="422" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="429.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="436" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="443.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="450" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="457.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="464" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="471.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="478" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="485.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="492" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="499.0" y="235.5" fill="#7d5f22">P</text>
+<rect class="cell" x="506" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="513.0" y="235.5" fill="#7d5f22">D</text>
+<rect class="cell" x="520" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="527.0" y="235.5" fill="#7d5f22">D</text>
+<rect class="cell" x="534" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="541.0" y="235.5" fill="#7d5f22">P</text>
+<rect class="cell" x="548" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="555.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="562" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="569.0" y="235.5" fill="#7d5f22">S</text>
+<rect class="cell" x="576" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="583.0" y="235.5" fill="#7d5f22">N</text>
+<rect class="cell" x="590" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="597.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="604" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="611.0" y="235.5" fill="#7d5f22">S</text>
+<rect class="cell" x="618" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="625.0" y="235.5" fill="#7d5f22">S</text>
+<rect class="cell" x="632" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="639.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="646" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="653.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="660" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="667.0" y="235.5" fill="#7d5f22">S</text>
+<rect class="cell" x="674" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="681.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="688" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="695.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="702" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="709.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="716" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="723.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="730" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="737.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="744" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="751.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="758" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="765.0" y="235.5" fill="#7d5f22">P</text>
+<rect class="cell" x="772" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="779.0" y="235.5" fill="#7d5f22">D</text>
+<rect class="cell" x="786" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="793.0" y="235.5" fill="#7d5f22">P</text>
+<rect class="cell" x="800" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="807.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="814" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="821.0" y="235.5" fill="#7d5f22">V</text>
+<rect class="cell" x="828" y="224" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="835.0" y="235.5" fill="#7d5f22">D</text>
+<rect class="edge" x="100" y="224" width="742" height="22" stroke="#b79c59"/>
+<text class="aa-t" x="1098" y="207">amino acids</text>
+<text class="di-t" x="1098" y="235">3Di structure</text>
+<rect class="prop" x="100" y="262" width="98" height="28" rx="3"/>
+<text class="prop-t" x="111" y="276">length  53</text>
+<rect class="prop" x="210.0" y="262" width="121" height="28" rx="3"/>
+<text class="prop-t" x="221.0" y="276">charge  −0.99</text>
+<rect class="prop" x="342.8" y="262" width="182" height="28" rx="3"/>
+<text class="prop-t" x="353.8" y="276">hydrophobicity  −0.01</text>
+<text class="pr-t" x="1098" y="276">properties</text>
+<circle class="num" cx="56" cy="330" r="15"/>
+<text class="num-t" x="56" y="330.5">2</text>
+<text class="head-t" x="100" y="330">Turn letters into numbers</text>
+<text class="say" x="100" y="358">Every position on a 70-position canvas becomes a column of 8 numbers, 6 for the amino acid and 2 for its 3Di letter.</text>
+<text class="say" x="100" y="379">Positions after the protein are all zeros. The shading shows this protein's real values, darker is larger.</text>
+<text class="top-let" x="107.0" y="424">M</text>
+<text class="top-let" x="121.0" y="424">L</text>
+<text class="top-let" x="135.0" y="424">D</text>
+<text class="top-let" x="149.0" y="424">E</text>
+<text class="top-let" x="163.0" y="424">I</text>
+<text class="top-let" x="177.0" y="424">S</text>
+<text class="top-let" x="191.0" y="424">S</text>
+<text class="top-let" x="205.0" y="424">K</text>
+<text class="top-let" x="219.0" y="424">E</text>
+<text class="top-let" x="233.0" y="424">K</text>
+<text class="top-let" x="247.0" y="424">A</text>
+<text class="top-let" x="261.0" y="424">A</text>
+<text class="top-let" x="275.0" y="424">I</text>
+<text class="top-let" x="289.0" y="424">L</text>
+<text class="top-let" x="303.0" y="424">I</text>
+<text class="top-let" x="317.0" y="424">R</text>
+<text class="top-let" x="331.0" y="424">T</text>
+<text class="top-let" x="345.0" y="424">L</text>
+<text class="top-let" x="359.0" y="424">D</text>
+<text class="top-let" x="373.0" y="424">E</text>
+<text class="top-let" x="387.0" y="424">G</text>
+<text class="top-let" x="401.0" y="424">V</text>
+<text class="top-let" x="415.0" y="424">A</text>
+<text class="top-let" x="429.0" y="424">A</text>
+<text class="top-let" x="443.0" y="424">K</text>
+<text class="top-let" x="457.0" y="424">V</text>
+<text class="top-let" x="471.0" y="424">I</text>
+<text class="top-let" x="485.0" y="424">E</text>
+<text class="top-let" x="499.0" y="424">Y</text>
+<text class="top-let" x="513.0" y="424">M</text>
+<text class="top-let" x="527.0" y="424">T</text>
+<text class="top-let" x="541.0" y="424">A</text>
+<text class="top-let" x="555.0" y="424">E</text>
+<text class="top-let" x="569.0" y="424">E</text>
+<text class="top-let" x="583.0" y="424">K</text>
+<text class="top-let" x="597.0" y="424">E</text>
+<text class="top-let" x="611.0" y="424">V</text>
+<text class="top-let" x="625.0" y="424">L</text>
+<text class="top-let" x="639.0" y="424">L</text>
+<text class="top-let" x="653.0" y="424">R</text>
+<text class="top-let" x="667.0" y="424">E</text>
+<text class="top-let" x="681.0" y="424">I</text>
+<text class="top-let" x="695.0" y="424">A</text>
+<text class="top-let" x="709.0" y="424">K</text>
+<text class="top-let" x="723.0" y="424">F</text>
+<text class="top-let" x="737.0" y="424">R</text>
+<text class="top-let" x="751.0" y="424">V</text>
+<text class="top-let" x="765.0" y="424">Y</text>
+<text class="top-let" x="779.0" y="424">K</text>
+<text class="top-let" x="793.0" y="424">P</text>
+<text class="top-let" x="807.0" y="424">E</text>
+<text class="top-let" x="821.0" y="424">T</text>
+<text class="top-let" x="835.0" y="424">L</text>
+<rect class="num-cell" x="100" y="436" width="14" height="11" fill="#93aac4"/>
+<rect class="num-cell" x="100" y="447" width="14" height="11" fill="#b3c4d7"/>
+<rect class="num-cell" x="100" y="458" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="100" y="469" width="14" height="11" fill="#d5e0ea"/>
+<rect class="num-cell" x="100" y="480" width="14" height="11" fill="#7b97b6"/>
+<rect class="num-cell" x="100" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="100" y="507" width="14" height="11" fill="#dcbb71"/>
+<rect class="num-cell" x="100" y="518" width="14" height="11" fill="#e3c687"/>
+<rect class="num-cell" x="114" y="436" width="14" height="11" fill="#859fbc"/>
+<rect class="num-cell" x="114" y="447" width="14" height="11" fill="#aec0d4"/>
+<rect class="num-cell" x="114" y="458" width="14" height="11" fill="#7593b3"/>
+<rect class="num-cell" x="114" y="469" width="14" height="11" fill="#6a8aad"/>
+<rect class="num-cell" x="114" y="480" width="14" height="11" fill="#9eb3ca"/>
+<rect class="num-cell" x="114" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="114" y="507" width="14" height="11" fill="#dbb86c"/>
+<rect class="num-cell" x="114" y="518" width="14" height="11" fill="#e9d19a"/>
+<rect class="num-cell" x="128" y="436" width="14" height="11" fill="#ccd8e5"/>
+<rect class="num-cell" x="128" y="447" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="128" y="458" width="14" height="11" fill="#9ab0c8"/>
+<rect class="num-cell" x="128" y="469" width="14" height="11" fill="#cad7e4"/>
+<rect class="num-cell" x="128" y="480" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="128" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="128" y="507" width="14" height="11" fill="#dbb86c"/>
+<rect class="num-cell" x="128" y="518" width="14" height="11" fill="#e9d19a"/>
+<rect class="num-cell" x="142" y="436" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="142" y="447" width="14" height="11" fill="#dfe8f0"/>
+<rect class="num-cell" x="142" y="458" width="14" height="11" fill="#6182a7"/>
+<rect class="num-cell" x="142" y="469" width="14" height="11" fill="#d6e1eb"/>
+<rect class="num-cell" x="142" y="480" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="142" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="142" y="507" width="14" height="11" fill="#dbb86c"/>
+<rect class="num-cell" x="142" y="518" width="14" height="11" fill="#e9d19a"/>
+<rect class="num-cell" x="156" y="436" width="14" height="11" fill="#8da5c0"/>
+<rect class="num-cell" x="156" y="447" width="14" height="11" fill="#adc0d3"/>
+<rect class="num-cell" x="156" y="458" width="14" height="11" fill="#a4b8ce"/>
+<rect class="num-cell" x="156" y="469" width="14" height="11" fill="#8ca5c0"/>
+<rect class="num-cell" x="156" y="480" width="14" height="11" fill="#93abc4"/>
+<rect class="num-cell" x="156" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="156" y="507" width="14" height="11" fill="#e8cf97"/>
+<rect class="num-cell" x="156" y="518" width="14" height="11" fill="#ead29c"/>
+<rect class="num-cell" x="170" y="436" width="14" height="11" fill="#a0b5cc"/>
+<rect class="num-cell" x="170" y="447" width="14" height="11" fill="#b4c5d7"/>
+<rect class="num-cell" x="170" y="458" width="14" height="11" fill="#b9cada"/>
+<rect class="num-cell" x="170" y="469" width="14" height="11" fill="#92aac4"/>
+<rect class="num-cell" x="170" y="480" width="14" height="11" fill="#8ba4c0"/>
+<rect class="num-cell" x="170" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="170" y="507" width="14" height="11" fill="#dcbb71"/>
+<rect class="num-cell" x="170" y="518" width="14" height="11" fill="#e3c687"/>
+<rect class="num-cell" x="184" y="436" width="14" height="11" fill="#a0b5cc"/>
+<rect class="num-cell" x="184" y="447" width="14" height="11" fill="#b4c5d7"/>
+<rect class="num-cell" x="184" y="458" width="14" height="11" fill="#b9cada"/>
+<rect class="num-cell" x="184" y="469" width="14" height="11" fill="#92aac4"/>
+<rect class="num-cell" x="184" y="480" width="14" height="11" fill="#8ba4c0"/>
+<rect class="num-cell" x="184" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="184" y="507" width="14" height="11" fill="#dbb86c"/>
+<rect class="num-cell" x="184" y="518" width="14" height="11" fill="#e9d19a"/>
+<rect class="num-cell" x="198" y="436" width="14" height="11" fill="#c4d2e1"/>
+<rect class="num-cell" x="198" y="447" width="14" height="11" fill="#718fb0"/>
+<rect class="num-cell" x="198" y="458" width="14" height="11" fill="#7f9bb9"/>
+<rect class="num-cell" x="198" y="469" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="198" y="480" width="14" height="11" fill="#859fbc"/>
+<rect class="num-cell" x="198" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="198" y="507" width="14" height="11" fill="#e8d098"/>
+<rect class="num-cell" x="198" y="518" width="14" height="11" fill="#efdbac"/>
+<rect class="num-cell" x="212" y="436" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="212" y="447" width="14" height="11" fill="#dfe8f0"/>
+<rect class="num-cell" x="212" y="458" width="14" height="11" fill="#6182a7"/>
+<rect class="num-cell" x="212" y="469" width="14" height="11" fill="#d6e1eb"/>
+<rect class="num-cell" x="212" y="480" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="212" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="212" y="507" width="14" height="11" fill="#e8d098"/>
+<rect class="num-cell" x="212" y="518" width="14" height="11" fill="#efdbac"/>
+<rect class="num-cell" x="226" y="436" width="14" height="11" fill="#c4d2e1"/>
+<rect class="num-cell" x="226" y="447" width="14" height="11" fill="#718fb0"/>
+<rect class="num-cell" x="226" y="458" width="14" height="11" fill="#7f9bb9"/>
+<rect class="num-cell" x="226" y="469" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="226" y="480" width="14" height="11" fill="#859fbc"/>
+<rect class="num-cell" x="226" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="226" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="226" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="240" y="436" width="14" height="11" fill="#a7bacf"/>
+<rect class="num-cell" x="240" y="447" width="14" height="11" fill="#aec0d4"/>
+<rect class="num-cell" x="240" y="458" width="14" height="11" fill="#7794b4"/>
+<rect class="num-cell" x="240" y="469" width="14" height="11" fill="#708eb0"/>
+<rect class="num-cell" x="240" y="480" width="14" height="11" fill="#97aec6"/>
+<rect class="num-cell" x="240" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="240" y="507" width="14" height="11" fill="#e8d098"/>
+<rect class="num-cell" x="240" y="518" width="14" height="11" fill="#efdbac"/>
+<rect class="num-cell" x="254" y="436" width="14" height="11" fill="#a7bacf"/>
+<rect class="num-cell" x="254" y="447" width="14" height="11" fill="#aec0d4"/>
+<rect class="num-cell" x="254" y="458" width="14" height="11" fill="#7794b4"/>
+<rect class="num-cell" x="254" y="469" width="14" height="11" fill="#708eb0"/>
+<rect class="num-cell" x="254" y="480" width="14" height="11" fill="#97aec6"/>
+<rect class="num-cell" x="254" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="254" y="507" width="14" height="11" fill="#e8d098"/>
+<rect class="num-cell" x="254" y="518" width="14" height="11" fill="#efdbac"/>
+<rect class="num-cell" x="268" y="436" width="14" height="11" fill="#8da5c0"/>
+<rect class="num-cell" x="268" y="447" width="14" height="11" fill="#adc0d3"/>
+<rect class="num-cell" x="268" y="458" width="14" height="11" fill="#a4b8ce"/>
+<rect class="num-cell" x="268" y="469" width="14" height="11" fill="#8ca5c0"/>
+<rect class="num-cell" x="268" y="480" width="14" height="11" fill="#93abc4"/>
+<rect class="num-cell" x="268" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="268" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="268" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="282" y="436" width="14" height="11" fill="#859fbc"/>
+<rect class="num-cell" x="282" y="447" width="14" height="11" fill="#aec0d4"/>
+<rect class="num-cell" x="282" y="458" width="14" height="11" fill="#7593b3"/>
+<rect class="num-cell" x="282" y="469" width="14" height="11" fill="#6a8aad"/>
+<rect class="num-cell" x="282" y="480" width="14" height="11" fill="#9eb3ca"/>
+<rect class="num-cell" x="282" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="282" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="282" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="296" y="436" width="14" height="11" fill="#8da5c0"/>
+<rect class="num-cell" x="296" y="447" width="14" height="11" fill="#adc0d3"/>
+<rect class="num-cell" x="296" y="458" width="14" height="11" fill="#a4b8ce"/>
+<rect class="num-cell" x="296" y="469" width="14" height="11" fill="#8ca5c0"/>
+<rect class="num-cell" x="296" y="480" width="14" height="11" fill="#93abc4"/>
+<rect class="num-cell" x="296" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="296" y="507" width="14" height="11" fill="#e8d098"/>
+<rect class="num-cell" x="296" y="518" width="14" height="11" fill="#efdbac"/>
+<rect class="num-cell" x="310" y="436" width="14" height="11" fill="#bcccdc"/>
+<rect class="num-cell" x="310" y="447" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="310" y="458" width="14" height="11" fill="#a5bacf"/>
+<rect class="num-cell" x="310" y="469" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="310" y="480" width="14" height="11" fill="#96adc6"/>
+<rect class="num-cell" x="310" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="310" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="310" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="324" y="436" width="14" height="11" fill="#a3b8ce"/>
+<rect class="num-cell" x="324" y="447" width="14" height="11" fill="#b5c6d8"/>
+<rect class="num-cell" x="324" y="458" width="14" height="11" fill="#b9cada"/>
+<rect class="num-cell" x="324" y="469" width="14" height="11" fill="#b4c5d7"/>
+<rect class="num-cell" x="324" y="480" width="14" height="11" fill="#89a3bf"/>
+<rect class="num-cell" x="324" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="324" y="507" width="14" height="11" fill="#dbb86c"/>
+<rect class="num-cell" x="324" y="518" width="14" height="11" fill="#e9d19a"/>
+<rect class="num-cell" x="338" y="436" width="14" height="11" fill="#859fbc"/>
+<rect class="num-cell" x="338" y="447" width="14" height="11" fill="#aec0d4"/>
+<rect class="num-cell" x="338" y="458" width="14" height="11" fill="#7593b3"/>
+<rect class="num-cell" x="338" y="469" width="14" height="11" fill="#6a8aad"/>
+<rect class="num-cell" x="338" y="480" width="14" height="11" fill="#9eb3ca"/>
+<rect class="num-cell" x="338" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="338" y="507" width="14" height="11" fill="#dcbb71"/>
+<rect class="num-cell" x="338" y="518" width="14" height="11" fill="#e3c687"/>
+<rect class="num-cell" x="352" y="436" width="14" height="11" fill="#ccd8e5"/>
+<rect class="num-cell" x="352" y="447" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="352" y="458" width="14" height="11" fill="#9ab0c8"/>
+<rect class="num-cell" x="352" y="469" width="14" height="11" fill="#cad7e4"/>
+<rect class="num-cell" x="352" y="480" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="352" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="352" y="507" width="14" height="11" fill="#dcbb71"/>
+<rect class="num-cell" x="352" y="518" width="14" height="11" fill="#e3c687"/>
+<rect class="num-cell" x="366" y="436" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="366" y="447" width="14" height="11" fill="#dfe8f0"/>
+<rect class="num-cell" x="366" y="458" width="14" height="11" fill="#6182a7"/>
+<rect class="num-cell" x="366" y="469" width="14" height="11" fill="#d6e1eb"/>
+<rect class="num-cell" x="366" y="480" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="366" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="366" y="507" width="14" height="11" fill="#dbb86c"/>
+<rect class="num-cell" x="366" y="518" width="14" height="11" fill="#e9d19a"/>
+<rect class="num-cell" x="380" y="436" width="14" height="11" fill="#9ab0c8"/>
+<rect class="num-cell" x="380" y="447" width="14" height="11" fill="#adc0d3"/>
+<rect class="num-cell" x="380" y="458" width="14" height="11" fill="#dee7f0"/>
+<rect class="num-cell" x="380" y="469" width="14" height="11" fill="#6989ac"/>
+<rect class="num-cell" x="380" y="480" width="14" height="11" fill="#7391b2"/>
+<rect class="num-cell" x="380" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="380" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="380" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="394" y="436" width="14" height="11" fill="#9db3ca"/>
+<rect class="num-cell" x="394" y="447" width="14" height="11" fill="#aec1d4"/>
+<rect class="num-cell" x="394" y="458" width="14" height="11" fill="#adbfd3"/>
+<rect class="num-cell" x="394" y="469" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="394" y="480" width="14" height="11" fill="#819cba"/>
+<rect class="num-cell" x="394" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="394" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="394" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="408" y="436" width="14" height="11" fill="#a7bacf"/>
+<rect class="num-cell" x="408" y="447" width="14" height="11" fill="#aec0d4"/>
+<rect class="num-cell" x="408" y="458" width="14" height="11" fill="#7794b4"/>
+<rect class="num-cell" x="408" y="469" width="14" height="11" fill="#708eb0"/>
+<rect class="num-cell" x="408" y="480" width="14" height="11" fill="#97aec6"/>
+<rect class="num-cell" x="408" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="408" y="507" width="14" height="11" fill="#cfa346"/>
+<rect class="num-cell" x="408" y="518" width="14" height="11" fill="#ebd5a0"/>
+<rect class="num-cell" x="422" y="436" width="14" height="11" fill="#a7bacf"/>
+<rect class="num-cell" x="422" y="447" width="14" height="11" fill="#aec0d4"/>
+<rect class="num-cell" x="422" y="458" width="14" height="11" fill="#7794b4"/>
+<rect class="num-cell" x="422" y="469" width="14" height="11" fill="#708eb0"/>
+<rect class="num-cell" x="422" y="480" width="14" height="11" fill="#97aec6"/>
+<rect class="num-cell" x="422" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="422" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="422" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="436" y="436" width="14" height="11" fill="#c4d2e1"/>
+<rect class="num-cell" x="436" y="447" width="14" height="11" fill="#718fb0"/>
+<rect class="num-cell" x="436" y="458" width="14" height="11" fill="#7f9bb9"/>
+<rect class="num-cell" x="436" y="469" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="436" y="480" width="14" height="11" fill="#859fbc"/>
+<rect class="num-cell" x="436" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="436" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="436" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="450" y="436" width="14" height="11" fill="#9db3ca"/>
+<rect class="num-cell" x="450" y="447" width="14" height="11" fill="#aec1d4"/>
+<rect class="num-cell" x="450" y="458" width="14" height="11" fill="#adbfd3"/>
+<rect class="num-cell" x="450" y="469" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="450" y="480" width="14" height="11" fill="#819cba"/>
+<rect class="num-cell" x="450" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="450" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="450" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="464" y="436" width="14" height="11" fill="#8da5c0"/>
+<rect class="num-cell" x="464" y="447" width="14" height="11" fill="#adc0d3"/>
+<rect class="num-cell" x="464" y="458" width="14" height="11" fill="#a4b8ce"/>
+<rect class="num-cell" x="464" y="469" width="14" height="11" fill="#8ca5c0"/>
+<rect class="num-cell" x="464" y="480" width="14" height="11" fill="#93abc4"/>
+<rect class="num-cell" x="464" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="464" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="464" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="478" y="436" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="478" y="447" width="14" height="11" fill="#dfe8f0"/>
+<rect class="num-cell" x="478" y="458" width="14" height="11" fill="#6182a7"/>
+<rect class="num-cell" x="478" y="469" width="14" height="11" fill="#d6e1eb"/>
+<rect class="num-cell" x="478" y="480" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="478" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="478" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="478" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="492" y="436" width="14" height="11" fill="#7996b5"/>
+<rect class="num-cell" x="492" y="447" width="14" height="11" fill="#b4c6d7"/>
+<rect class="num-cell" x="492" y="458" width="14" height="11" fill="#c8d5e3"/>
+<rect class="num-cell" x="492" y="469" width="14" height="11" fill="#cddae6"/>
+<rect class="num-cell" x="492" y="480" width="14" height="11" fill="#91a9c3"/>
+<rect class="num-cell" x="492" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="492" y="507" width="14" height="11" fill="#dbb86c"/>
+<rect class="num-cell" x="492" y="518" width="14" height="11" fill="#e9d19a"/>
+<rect class="num-cell" x="506" y="436" width="14" height="11" fill="#93aac4"/>
+<rect class="num-cell" x="506" y="447" width="14" height="11" fill="#b3c4d7"/>
+<rect class="num-cell" x="506" y="458" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="506" y="469" width="14" height="11" fill="#d5e0ea"/>
+<rect class="num-cell" x="506" y="480" width="14" height="11" fill="#7b97b6"/>
+<rect class="num-cell" x="506" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="506" y="507" width="14" height="11" fill="#dcbb71"/>
+<rect class="num-cell" x="506" y="518" width="14" height="11" fill="#e3c687"/>
+<rect class="num-cell" x="520" y="436" width="14" height="11" fill="#a3b8ce"/>
+<rect class="num-cell" x="520" y="447" width="14" height="11" fill="#b5c6d8"/>
+<rect class="num-cell" x="520" y="458" width="14" height="11" fill="#b9cada"/>
+<rect class="num-cell" x="520" y="469" width="14" height="11" fill="#b4c5d7"/>
+<rect class="num-cell" x="520" y="480" width="14" height="11" fill="#89a3bf"/>
+<rect class="num-cell" x="520" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="520" y="507" width="14" height="11" fill="#dcbb71"/>
+<rect class="num-cell" x="520" y="518" width="14" height="11" fill="#e3c687"/>
+<rect class="num-cell" x="534" y="436" width="14" height="11" fill="#a7bacf"/>
+<rect class="num-cell" x="534" y="447" width="14" height="11" fill="#aec0d4"/>
+<rect class="num-cell" x="534" y="458" width="14" height="11" fill="#7794b4"/>
+<rect class="num-cell" x="534" y="469" width="14" height="11" fill="#708eb0"/>
+<rect class="num-cell" x="534" y="480" width="14" height="11" fill="#97aec6"/>
+<rect class="num-cell" x="534" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="534" y="507" width="14" height="11" fill="#dbb86c"/>
+<rect class="num-cell" x="534" y="518" width="14" height="11" fill="#e9d19a"/>
+<rect class="num-cell" x="548" y="436" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="548" y="447" width="14" height="11" fill="#dfe8f0"/>
+<rect class="num-cell" x="548" y="458" width="14" height="11" fill="#6182a7"/>
+<rect class="num-cell" x="548" y="469" width="14" height="11" fill="#d6e1eb"/>
+<rect class="num-cell" x="548" y="480" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="548" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="548" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="548" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="562" y="436" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="562" y="447" width="14" height="11" fill="#dfe8f0"/>
+<rect class="num-cell" x="562" y="458" width="14" height="11" fill="#6182a7"/>
+<rect class="num-cell" x="562" y="469" width="14" height="11" fill="#d6e1eb"/>
+<rect class="num-cell" x="562" y="480" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="562" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="562" y="507" width="14" height="11" fill="#cfa346"/>
+<rect class="num-cell" x="562" y="518" width="14" height="11" fill="#ebd5a0"/>
+<rect class="num-cell" x="576" y="436" width="14" height="11" fill="#c4d2e1"/>
+<rect class="num-cell" x="576" y="447" width="14" height="11" fill="#718fb0"/>
+<rect class="num-cell" x="576" y="458" width="14" height="11" fill="#7f9bb9"/>
+<rect class="num-cell" x="576" y="469" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="576" y="480" width="14" height="11" fill="#859fbc"/>
+<rect class="num-cell" x="576" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="576" y="507" width="14" height="11" fill="#d3aa52"/>
+<rect class="num-cell" x="576" y="518" width="14" height="11" fill="#e9d29c"/>
+<rect class="num-cell" x="590" y="436" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="590" y="447" width="14" height="11" fill="#dfe8f0"/>
+<rect class="num-cell" x="590" y="458" width="14" height="11" fill="#6182a7"/>
+<rect class="num-cell" x="590" y="469" width="14" height="11" fill="#d6e1eb"/>
+<rect class="num-cell" x="590" y="480" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="590" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="590" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="590" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="604" y="436" width="14" height="11" fill="#9db3ca"/>
+<rect class="num-cell" x="604" y="447" width="14" height="11" fill="#aec1d4"/>
+<rect class="num-cell" x="604" y="458" width="14" height="11" fill="#adbfd3"/>
+<rect class="num-cell" x="604" y="469" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="604" y="480" width="14" height="11" fill="#819cba"/>
+<rect class="num-cell" x="604" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="604" y="507" width="14" height="11" fill="#cfa346"/>
+<rect class="num-cell" x="604" y="518" width="14" height="11" fill="#ebd5a0"/>
+<rect class="num-cell" x="618" y="436" width="14" height="11" fill="#859fbc"/>
+<rect class="num-cell" x="618" y="447" width="14" height="11" fill="#aec0d4"/>
+<rect class="num-cell" x="618" y="458" width="14" height="11" fill="#7593b3"/>
+<rect class="num-cell" x="618" y="469" width="14" height="11" fill="#6a8aad"/>
+<rect class="num-cell" x="618" y="480" width="14" height="11" fill="#9eb3ca"/>
+<rect class="num-cell" x="618" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="618" y="507" width="14" height="11" fill="#cfa346"/>
+<rect class="num-cell" x="618" y="518" width="14" height="11" fill="#ebd5a0"/>
+<rect class="num-cell" x="632" y="436" width="14" height="11" fill="#859fbc"/>
+<rect class="num-cell" x="632" y="447" width="14" height="11" fill="#aec0d4"/>
+<rect class="num-cell" x="632" y="458" width="14" height="11" fill="#7593b3"/>
+<rect class="num-cell" x="632" y="469" width="14" height="11" fill="#6a8aad"/>
+<rect class="num-cell" x="632" y="480" width="14" height="11" fill="#9eb3ca"/>
+<rect class="num-cell" x="632" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="632" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="632" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="646" y="436" width="14" height="11" fill="#bcccdc"/>
+<rect class="num-cell" x="646" y="447" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="646" y="458" width="14" height="11" fill="#a5bacf"/>
+<rect class="num-cell" x="646" y="469" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="646" y="480" width="14" height="11" fill="#96adc6"/>
+<rect class="num-cell" x="646" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="646" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="646" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="660" y="436" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="660" y="447" width="14" height="11" fill="#dfe8f0"/>
+<rect class="num-cell" x="660" y="458" width="14" height="11" fill="#6182a7"/>
+<rect class="num-cell" x="660" y="469" width="14" height="11" fill="#d6e1eb"/>
+<rect class="num-cell" x="660" y="480" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="660" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="660" y="507" width="14" height="11" fill="#cfa346"/>
+<rect class="num-cell" x="660" y="518" width="14" height="11" fill="#ebd5a0"/>
+<rect class="num-cell" x="674" y="436" width="14" height="11" fill="#8da5c0"/>
+<rect class="num-cell" x="674" y="447" width="14" height="11" fill="#adc0d3"/>
+<rect class="num-cell" x="674" y="458" width="14" height="11" fill="#a4b8ce"/>
+<rect class="num-cell" x="674" y="469" width="14" height="11" fill="#8ca5c0"/>
+<rect class="num-cell" x="674" y="480" width="14" height="11" fill="#93abc4"/>
+<rect class="num-cell" x="674" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="674" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="674" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="688" y="436" width="14" height="11" fill="#a7bacf"/>
+<rect class="num-cell" x="688" y="447" width="14" height="11" fill="#aec0d4"/>
+<rect class="num-cell" x="688" y="458" width="14" height="11" fill="#7794b4"/>
+<rect class="num-cell" x="688" y="469" width="14" height="11" fill="#708eb0"/>
+<rect class="num-cell" x="688" y="480" width="14" height="11" fill="#97aec6"/>
+<rect class="num-cell" x="688" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="688" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="688" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="702" y="436" width="14" height="11" fill="#c4d2e1"/>
+<rect class="num-cell" x="702" y="447" width="14" height="11" fill="#718fb0"/>
+<rect class="num-cell" x="702" y="458" width="14" height="11" fill="#7f9bb9"/>
+<rect class="num-cell" x="702" y="469" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="702" y="480" width="14" height="11" fill="#859fbc"/>
+<rect class="num-cell" x="702" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="702" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="702" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="716" y="436" width="14" height="11" fill="#7391b2"/>
+<rect class="num-cell" x="716" y="447" width="14" height="11" fill="#b7c8d9"/>
+<rect class="num-cell" x="716" y="458" width="14" height="11" fill="#96adc6"/>
+<rect class="num-cell" x="716" y="469" width="14" height="11" fill="#b2c4d6"/>
+<rect class="num-cell" x="716" y="480" width="14" height="11" fill="#a7bbd0"/>
+<rect class="num-cell" x="716" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="716" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="716" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="730" y="436" width="14" height="11" fill="#bcccdc"/>
+<rect class="num-cell" x="730" y="447" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="730" y="458" width="14" height="11" fill="#a5bacf"/>
+<rect class="num-cell" x="730" y="469" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="730" y="480" width="14" height="11" fill="#96adc6"/>
+<rect class="num-cell" x="730" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="730" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="730" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="744" y="436" width="14" height="11" fill="#9db3ca"/>
+<rect class="num-cell" x="744" y="447" width="14" height="11" fill="#aec1d4"/>
+<rect class="num-cell" x="744" y="458" width="14" height="11" fill="#adbfd3"/>
+<rect class="num-cell" x="744" y="469" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="744" y="480" width="14" height="11" fill="#819cba"/>
+<rect class="num-cell" x="744" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="744" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="744" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="758" y="436" width="14" height="11" fill="#7996b5"/>
+<rect class="num-cell" x="758" y="447" width="14" height="11" fill="#b4c6d7"/>
+<rect class="num-cell" x="758" y="458" width="14" height="11" fill="#c8d5e3"/>
+<rect class="num-cell" x="758" y="469" width="14" height="11" fill="#cddae6"/>
+<rect class="num-cell" x="758" y="480" width="14" height="11" fill="#91a9c3"/>
+<rect class="num-cell" x="758" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="758" y="507" width="14" height="11" fill="#dbb86c"/>
+<rect class="num-cell" x="758" y="518" width="14" height="11" fill="#e9d19a"/>
+<rect class="num-cell" x="772" y="436" width="14" height="11" fill="#c4d2e1"/>
+<rect class="num-cell" x="772" y="447" width="14" height="11" fill="#718fb0"/>
+<rect class="num-cell" x="772" y="458" width="14" height="11" fill="#7f9bb9"/>
+<rect class="num-cell" x="772" y="469" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="772" y="480" width="14" height="11" fill="#859fbc"/>
+<rect class="num-cell" x="772" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="772" y="507" width="14" height="11" fill="#dcbb71"/>
+<rect class="num-cell" x="772" y="518" width="14" height="11" fill="#e3c687"/>
+<rect class="num-cell" x="786" y="436" width="14" height="11" fill="#b1c3d6"/>
+<rect class="num-cell" x="786" y="447" width="14" height="11" fill="#a9bcd1"/>
+<rect class="num-cell" x="786" y="458" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="786" y="469" width="14" height="11" fill="#ccd9e5"/>
+<rect class="num-cell" x="786" y="480" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="786" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="786" y="507" width="14" height="11" fill="#dbb86c"/>
+<rect class="num-cell" x="786" y="518" width="14" height="11" fill="#e9d19a"/>
+<rect class="num-cell" x="800" y="436" width="14" height="11" fill="#e4ecf3"/>
+<rect class="num-cell" x="800" y="447" width="14" height="11" fill="#dfe8f0"/>
+<rect class="num-cell" x="800" y="458" width="14" height="11" fill="#6182a7"/>
+<rect class="num-cell" x="800" y="469" width="14" height="11" fill="#d6e1eb"/>
+<rect class="num-cell" x="800" y="480" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="800" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="800" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="800" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="814" y="436" width="14" height="11" fill="#a3b8ce"/>
+<rect class="num-cell" x="814" y="447" width="14" height="11" fill="#b5c6d8"/>
+<rect class="num-cell" x="814" y="458" width="14" height="11" fill="#b9cada"/>
+<rect class="num-cell" x="814" y="469" width="14" height="11" fill="#b4c5d7"/>
+<rect class="num-cell" x="814" y="480" width="14" height="11" fill="#89a3bf"/>
+<rect class="num-cell" x="814" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="814" y="507" width="14" height="11" fill="#dab76a"/>
+<rect class="num-cell" x="814" y="518" width="14" height="11" fill="#f0ddb0"/>
+<rect class="num-cell" x="828" y="436" width="14" height="11" fill="#859fbc"/>
+<rect class="num-cell" x="828" y="447" width="14" height="11" fill="#aec0d4"/>
+<rect class="num-cell" x="828" y="458" width="14" height="11" fill="#7593b3"/>
+<rect class="num-cell" x="828" y="469" width="14" height="11" fill="#6a8aad"/>
+<rect class="num-cell" x="828" y="480" width="14" height="11" fill="#9eb3ca"/>
+<rect class="num-cell" x="828" y="491" width="14" height="11" fill="#5d7fa5"/>
+<rect class="num-cell" x="828" y="507" width="14" height="11" fill="#dcbb71"/>
+<rect class="num-cell" x="828" y="518" width="14" height="11" fill="#e3c687"/>
+<rect class="zero" x="842" y="436" width="14" height="11"/>
+<rect class="zero" x="842" y="447" width="14" height="11"/>
+<rect class="zero" x="842" y="458" width="14" height="11"/>
+<rect class="zero" x="842" y="469" width="14" height="11"/>
+<rect class="zero" x="842" y="480" width="14" height="11"/>
+<rect class="zero" x="842" y="491" width="14" height="11"/>
+<rect class="zero" x="842" y="507" width="14" height="11"/>
+<rect class="zero" x="842" y="518" width="14" height="11"/>
+<rect class="zero" x="856" y="436" width="14" height="11"/>
+<rect class="zero" x="856" y="447" width="14" height="11"/>
+<rect class="zero" x="856" y="458" width="14" height="11"/>
+<rect class="zero" x="856" y="469" width="14" height="11"/>
+<rect class="zero" x="856" y="480" width="14" height="11"/>
+<rect class="zero" x="856" y="491" width="14" height="11"/>
+<rect class="zero" x="856" y="507" width="14" height="11"/>
+<rect class="zero" x="856" y="518" width="14" height="11"/>
+<rect class="zero" x="870" y="436" width="14" height="11"/>
+<rect class="zero" x="870" y="447" width="14" height="11"/>
+<rect class="zero" x="870" y="458" width="14" height="11"/>
+<rect class="zero" x="870" y="469" width="14" height="11"/>
+<rect class="zero" x="870" y="480" width="14" height="11"/>
+<rect class="zero" x="870" y="491" width="14" height="11"/>
+<rect class="zero" x="870" y="507" width="14" height="11"/>
+<rect class="zero" x="870" y="518" width="14" height="11"/>
+<rect class="zero" x="884" y="436" width="14" height="11"/>
+<rect class="zero" x="884" y="447" width="14" height="11"/>
+<rect class="zero" x="884" y="458" width="14" height="11"/>
+<rect class="zero" x="884" y="469" width="14" height="11"/>
+<rect class="zero" x="884" y="480" width="14" height="11"/>
+<rect class="zero" x="884" y="491" width="14" height="11"/>
+<rect class="zero" x="884" y="507" width="14" height="11"/>
+<rect class="zero" x="884" y="518" width="14" height="11"/>
+<rect class="zero" x="898" y="436" width="14" height="11"/>
+<rect class="zero" x="898" y="447" width="14" height="11"/>
+<rect class="zero" x="898" y="458" width="14" height="11"/>
+<rect class="zero" x="898" y="469" width="14" height="11"/>
+<rect class="zero" x="898" y="480" width="14" height="11"/>
+<rect class="zero" x="898" y="491" width="14" height="11"/>
+<rect class="zero" x="898" y="507" width="14" height="11"/>
+<rect class="zero" x="898" y="518" width="14" height="11"/>
+<rect class="zero" x="912" y="436" width="14" height="11"/>
+<rect class="zero" x="912" y="447" width="14" height="11"/>
+<rect class="zero" x="912" y="458" width="14" height="11"/>
+<rect class="zero" x="912" y="469" width="14" height="11"/>
+<rect class="zero" x="912" y="480" width="14" height="11"/>
+<rect class="zero" x="912" y="491" width="14" height="11"/>
+<rect class="zero" x="912" y="507" width="14" height="11"/>
+<rect class="zero" x="912" y="518" width="14" height="11"/>
+<rect class="zero" x="926" y="436" width="14" height="11"/>
+<rect class="zero" x="926" y="447" width="14" height="11"/>
+<rect class="zero" x="926" y="458" width="14" height="11"/>
+<rect class="zero" x="926" y="469" width="14" height="11"/>
+<rect class="zero" x="926" y="480" width="14" height="11"/>
+<rect class="zero" x="926" y="491" width="14" height="11"/>
+<rect class="zero" x="926" y="507" width="14" height="11"/>
+<rect class="zero" x="926" y="518" width="14" height="11"/>
+<rect class="zero" x="940" y="436" width="14" height="11"/>
+<rect class="zero" x="940" y="447" width="14" height="11"/>
+<rect class="zero" x="940" y="458" width="14" height="11"/>
+<rect class="zero" x="940" y="469" width="14" height="11"/>
+<rect class="zero" x="940" y="480" width="14" height="11"/>
+<rect class="zero" x="940" y="491" width="14" height="11"/>
+<rect class="zero" x="940" y="507" width="14" height="11"/>
+<rect class="zero" x="940" y="518" width="14" height="11"/>
+<rect class="zero" x="954" y="436" width="14" height="11"/>
+<rect class="zero" x="954" y="447" width="14" height="11"/>
+<rect class="zero" x="954" y="458" width="14" height="11"/>
+<rect class="zero" x="954" y="469" width="14" height="11"/>
+<rect class="zero" x="954" y="480" width="14" height="11"/>
+<rect class="zero" x="954" y="491" width="14" height="11"/>
+<rect class="zero" x="954" y="507" width="14" height="11"/>
+<rect class="zero" x="954" y="518" width="14" height="11"/>
+<rect class="zero" x="968" y="436" width="14" height="11"/>
+<rect class="zero" x="968" y="447" width="14" height="11"/>
+<rect class="zero" x="968" y="458" width="14" height="11"/>
+<rect class="zero" x="968" y="469" width="14" height="11"/>
+<rect class="zero" x="968" y="480" width="14" height="11"/>
+<rect class="zero" x="968" y="491" width="14" height="11"/>
+<rect class="zero" x="968" y="507" width="14" height="11"/>
+<rect class="zero" x="968" y="518" width="14" height="11"/>
+<rect class="zero" x="982" y="436" width="14" height="11"/>
+<rect class="zero" x="982" y="447" width="14" height="11"/>
+<rect class="zero" x="982" y="458" width="14" height="11"/>
+<rect class="zero" x="982" y="469" width="14" height="11"/>
+<rect class="zero" x="982" y="480" width="14" height="11"/>
+<rect class="zero" x="982" y="491" width="14" height="11"/>
+<rect class="zero" x="982" y="507" width="14" height="11"/>
+<rect class="zero" x="982" y="518" width="14" height="11"/>
+<rect class="zero" x="996" y="436" width="14" height="11"/>
+<rect class="zero" x="996" y="447" width="14" height="11"/>
+<rect class="zero" x="996" y="458" width="14" height="11"/>
+<rect class="zero" x="996" y="469" width="14" height="11"/>
+<rect class="zero" x="996" y="480" width="14" height="11"/>
+<rect class="zero" x="996" y="491" width="14" height="11"/>
+<rect class="zero" x="996" y="507" width="14" height="11"/>
+<rect class="zero" x="996" y="518" width="14" height="11"/>
+<rect class="zero" x="1010" y="436" width="14" height="11"/>
+<rect class="zero" x="1010" y="447" width="14" height="11"/>
+<rect class="zero" x="1010" y="458" width="14" height="11"/>
+<rect class="zero" x="1010" y="469" width="14" height="11"/>
+<rect class="zero" x="1010" y="480" width="14" height="11"/>
+<rect class="zero" x="1010" y="491" width="14" height="11"/>
+<rect class="zero" x="1010" y="507" width="14" height="11"/>
+<rect class="zero" x="1010" y="518" width="14" height="11"/>
+<rect class="zero" x="1024" y="436" width="14" height="11"/>
+<rect class="zero" x="1024" y="447" width="14" height="11"/>
+<rect class="zero" x="1024" y="458" width="14" height="11"/>
+<rect class="zero" x="1024" y="469" width="14" height="11"/>
+<rect class="zero" x="1024" y="480" width="14" height="11"/>
+<rect class="zero" x="1024" y="491" width="14" height="11"/>
+<rect class="zero" x="1024" y="507" width="14" height="11"/>
+<rect class="zero" x="1024" y="518" width="14" height="11"/>
+<rect class="zero" x="1038" y="436" width="14" height="11"/>
+<rect class="zero" x="1038" y="447" width="14" height="11"/>
+<rect class="zero" x="1038" y="458" width="14" height="11"/>
+<rect class="zero" x="1038" y="469" width="14" height="11"/>
+<rect class="zero" x="1038" y="480" width="14" height="11"/>
+<rect class="zero" x="1038" y="491" width="14" height="11"/>
+<rect class="zero" x="1038" y="507" width="14" height="11"/>
+<rect class="zero" x="1038" y="518" width="14" height="11"/>
+<rect class="zero" x="1052" y="436" width="14" height="11"/>
+<rect class="zero" x="1052" y="447" width="14" height="11"/>
+<rect class="zero" x="1052" y="458" width="14" height="11"/>
+<rect class="zero" x="1052" y="469" width="14" height="11"/>
+<rect class="zero" x="1052" y="480" width="14" height="11"/>
+<rect class="zero" x="1052" y="491" width="14" height="11"/>
+<rect class="zero" x="1052" y="507" width="14" height="11"/>
+<rect class="zero" x="1052" y="518" width="14" height="11"/>
+<rect class="zero" x="1066" y="436" width="14" height="11"/>
+<rect class="zero" x="1066" y="447" width="14" height="11"/>
+<rect class="zero" x="1066" y="458" width="14" height="11"/>
+<rect class="zero" x="1066" y="469" width="14" height="11"/>
+<rect class="zero" x="1066" y="480" width="14" height="11"/>
+<rect class="zero" x="1066" y="491" width="14" height="11"/>
+<rect class="zero" x="1066" y="507" width="14" height="11"/>
+<rect class="zero" x="1066" y="518" width="14" height="11"/>
+<rect class="edge" x="100" y="436" width="742" height="66" stroke="#6788a7"/>
+<rect class="edge" x="100" y="507" width="742" height="22" stroke="#b79c59"/>
+<rect class="pad" x="842.5" y="436.5" width="237" height="92"/>
+<rect class="focus" x="197" y="416" width="16" height="113" rx="2"/>
+<path class="brk" d="M101 534 V539 H841 V534"/>
+<text class="note" x="471.0" y="553" style="text-anchor:middle">53 residues</text>
+<path class="brk" d="M843 534 V539 H1079 V534"/>
+<text class="note" x="961.0" y="553" style="text-anchor:middle">17 zeros</text>
+<path class="brk" d="M1090 437 h5 V501 h-5"/>
+<text class="aa-t" x="1104" y="460.0">amino acid</text>
+<text class="note" x="1104" y="478.0">6 numbers</text>
+<path class="brk" d="M1090 508 h5 V528 h-5"/>
+<text class="di-t" x="1104" y="509.0">3Di</text>
+<text class="note" x="1104" y="527.0">2 numbers</text>
+<text class="note" x="192" y="404" style="text-anchor:start">one position, K</text>
+<circle class="num" cx="56" cy="592" r="15"/>
+<text class="num-t" x="56" y="592.5">3</text>
+<text class="head-t" x="100" y="592">Hide part of it</text>
+<text class="say" x="100" y="620">A random design task picks the residues the model must redesign. Their 3Di hints and some properties may be hidden too.</text>
+<text class="say" x="100" y="641">Here two stretches are redesigned. Other draws keep only one end, keep a middle piece, or redesign the whole protein.</text>
+<rect class="panel" x="82" y="664" width="1128" height="290" rx="6"/>
+<text class="sub" x="100" y="690">Prepared training example</text>
+<text class="note" x="1080" y="690" style="text-anchor:end">each cell stands for its column of 8 numbers</text>
+<text class="sub" x="100" y="724" style="font-weight:600;fill:#50554e">Given to the model</text>
+<rect class="cell" x="100" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="107.0" y="751.5" fill="#3b5876">M</text>
+<rect class="cell" x="114" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="121.0" y="751.5" fill="#3b5876">L</text>
+<rect class="cell" x="128" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="135.0" y="751.5" fill="#3b5876">D</text>
+<rect class="cell" x="142" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="149.0" y="751.5" fill="#3b5876">E</text>
+<rect class="cell" x="156" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="163.0" y="751.5" fill="#3b5876">I</text>
+<rect class="cell" x="170" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="177.0" y="751.5" fill="#3b5876">S</text>
+<rect class="cell" x="184" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="191.0" y="751.5" fill="#3b5876">S</text>
+<rect class="cell" x="198" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="205.0" y="751.5" fill="#3b5876">K</text>
+<rect class="cell" x="212" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="219.0" y="751.5" fill="#3b5876">E</text>
+<rect class="cell" x="226" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="233.0" y="751.5" fill="#3b5876">K</text>
+<rect class="cell" x="240" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="247.0" y="751.5" fill="#3b5876">A</text>
+<rect class="cell" x="366" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="373.0" y="751.5" fill="#3b5876">E</text>
+<rect class="cell" x="380" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="387.0" y="751.5" fill="#3b5876">G</text>
+<rect class="cell" x="394" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="401.0" y="751.5" fill="#3b5876">V</text>
+<rect class="cell" x="408" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="415.0" y="751.5" fill="#3b5876">A</text>
+<rect class="cell" x="422" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="429.0" y="751.5" fill="#3b5876">A</text>
+<rect class="cell" x="436" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="443.0" y="751.5" fill="#3b5876">K</text>
+<rect class="cell" x="450" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="457.0" y="751.5" fill="#3b5876">V</text>
+<rect class="cell" x="464" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="471.0" y="751.5" fill="#3b5876">I</text>
+<rect class="cell" x="478" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="485.0" y="751.5" fill="#3b5876">E</text>
+<rect class="cell" x="492" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="499.0" y="751.5" fill="#3b5876">Y</text>
+<rect class="cell" x="506" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="513.0" y="751.5" fill="#3b5876">M</text>
+<rect class="cell" x="520" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="527.0" y="751.5" fill="#3b5876">T</text>
+<rect class="cell" x="534" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="541.0" y="751.5" fill="#3b5876">A</text>
+<rect class="cell" x="548" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="555.0" y="751.5" fill="#3b5876">E</text>
+<rect class="cell" x="660" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="667.0" y="751.5" fill="#3b5876">E</text>
+<rect class="cell" x="674" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="681.0" y="751.5" fill="#3b5876">I</text>
+<rect class="cell" x="688" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="695.0" y="751.5" fill="#3b5876">A</text>
+<rect class="cell" x="702" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="709.0" y="751.5" fill="#3b5876">K</text>
+<rect class="cell" x="716" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="723.0" y="751.5" fill="#3b5876">F</text>
+<rect class="cell" x="730" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="737.0" y="751.5" fill="#3b5876">R</text>
+<rect class="cell" x="744" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="751.0" y="751.5" fill="#3b5876">V</text>
+<rect class="cell" x="758" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="765.0" y="751.5" fill="#3b5876">Y</text>
+<rect class="cell" x="772" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="779.0" y="751.5" fill="#3b5876">K</text>
+<rect class="cell" x="786" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="793.0" y="751.5" fill="#3b5876">P</text>
+<rect class="cell" x="800" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="807.0" y="751.5" fill="#3b5876">E</text>
+<rect class="cell" x="814" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="821.0" y="751.5" fill="#3b5876">T</text>
+<rect class="cell" x="828" y="740" width="14" height="22" fill="#dfe8f1"/>
+<text class="let" x="835.0" y="751.5" fill="#3b5876">L</text>
+<rect class="blank" x="254" y="740" width="112" height="22"/>
+<text class="blank-t" x="310.0" y="751.0">redesign</text>
+<rect class="blank" x="562" y="740" width="98" height="22"/>
+<text class="blank-t" x="611.0" y="751.0">redesign</text>
+<rect class="edge" x="100" y="740" width="742" height="22" stroke="#6788a7"/>
+<rect class="pad" x="842.5" y="740.5" width="237" height="21"/>
+<rect class="cell" x="100" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="107.0" y="779.5" fill="#7d5f22">D</text>
+<rect class="cell" x="114" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="121.0" y="779.5" fill="#7d5f22">P</text>
+<rect class="cell" x="128" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="135.0" y="779.5" fill="#7d5f22">P</text>
+<rect class="cell" x="142" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="149.0" y="779.5" fill="#7d5f22">P</text>
+<rect class="cell" x="156" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="163.0" y="779.5" fill="#7d5f22">Q</text>
+<rect class="cell" x="170" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="177.0" y="779.5" fill="#7d5f22">D</text>
+<rect class="cell" x="184" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="191.0" y="779.5" fill="#7d5f22">P</text>
+<rect class="cell" x="198" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="205.0" y="779.5" fill="#7d5f22">L</text>
+<rect class="cell" x="212" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="219.0" y="779.5" fill="#7d5f22">L</text>
+<rect class="cell" x="226" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="233.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="240" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="247.0" y="779.5" fill="#7d5f22">L</text>
+<rect class="cell" x="254" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="261.0" y="779.5" fill="#7d5f22">L</text>
+<rect class="cell" x="268" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="275.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="282" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="289.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="296" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="303.0" y="779.5" fill="#7d5f22">L</text>
+<rect class="cell" x="310" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="317.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="324" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="331.0" y="779.5" fill="#7d5f22">P</text>
+<rect class="cell" x="338" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="345.0" y="779.5" fill="#7d5f22">D</text>
+<rect class="cell" x="352" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="359.0" y="779.5" fill="#7d5f22">D</text>
+<rect class="cell" x="366" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="373.0" y="779.5" fill="#7d5f22">P</text>
+<rect class="cell" x="380" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="387.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="394" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="401.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="408" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="415.0" y="779.5" fill="#7d5f22">S</text>
+<rect class="cell" x="422" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="429.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="436" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="443.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="450" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="457.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="464" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="471.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="478" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="485.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="492" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="499.0" y="779.5" fill="#7d5f22">P</text>
+<rect class="cell" x="506" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="513.0" y="779.5" fill="#7d5f22">D</text>
+<rect class="cell" x="520" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="527.0" y="779.5" fill="#7d5f22">D</text>
+<rect class="cell" x="534" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="541.0" y="779.5" fill="#7d5f22">P</text>
+<rect class="cell" x="548" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="555.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="660" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="667.0" y="779.5" fill="#7d5f22">S</text>
+<rect class="cell" x="674" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="681.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="688" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="695.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="702" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="709.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="716" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="723.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="730" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="737.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="744" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="751.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="758" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="765.0" y="779.5" fill="#7d5f22">P</text>
+<rect class="cell" x="772" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="779.0" y="779.5" fill="#7d5f22">D</text>
+<rect class="cell" x="786" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="793.0" y="779.5" fill="#7d5f22">P</text>
+<rect class="cell" x="800" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="807.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="814" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="821.0" y="779.5" fill="#7d5f22">V</text>
+<rect class="cell" x="828" y="768" width="14" height="22" fill="#f6e8c0"/>
+<text class="let" x="835.0" y="779.5" fill="#7d5f22">D</text>
+<rect class="blank" x="562" y="768" width="98" height="22"/>
+<text class="blank-t" x="611.0" y="779.0">hidden</text>
+<rect class="edge" x="100" y="768" width="742" height="22" stroke="#b79c59"/>
+<rect class="pad" x="842.5" y="768.5" width="237" height="21"/>
+<text class="aa-t" x="1098" y="751">amino acids</text>
+<text class="di-t" x="1098" y="779">3Di hints</text>
+<rect class="prop" x="100" y="802" width="98" height="28" rx="3"/>
+<text class="prop-t" x="111" y="816">length  53</text>
+<rect class="gone" x="210.0" y="802" width="128" height="28" rx="3"/>
+<text class="gone-t" x="221.0" y="816">charge  hidden</text>
+<rect class="prop" x="350.4" y="802" width="182" height="28" rx="3"/>
+<text class="prop-t" x="361.4" y="816">hydrophobicity  −0.01</text>
+<text class="pr-t" x="1098" y="816">properties</text>
+<text class="sub" x="100" y="864" style="font-weight:600;fill:#50554e">Answer it learns to produce</text>
+<text class="note" x="332" y="865">the complete protein, with the redesigned positions dark</text>
+<rect class="cell" x="100" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="107.0" y="891.5" fill="#8ba0b6">M</text>
+<rect class="cell" x="114" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="121.0" y="891.5" fill="#8ba0b6">L</text>
+<rect class="cell" x="128" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="135.0" y="891.5" fill="#8ba0b6">D</text>
+<rect class="cell" x="142" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="149.0" y="891.5" fill="#8ba0b6">E</text>
+<rect class="cell" x="156" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="163.0" y="891.5" fill="#8ba0b6">I</text>
+<rect class="cell" x="170" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="177.0" y="891.5" fill="#8ba0b6">S</text>
+<rect class="cell" x="184" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="191.0" y="891.5" fill="#8ba0b6">S</text>
+<rect class="cell" x="198" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="205.0" y="891.5" fill="#8ba0b6">K</text>
+<rect class="cell" x="212" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="219.0" y="891.5" fill="#8ba0b6">E</text>
+<rect class="cell" x="226" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="233.0" y="891.5" fill="#8ba0b6">K</text>
+<rect class="cell" x="240" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="247.0" y="891.5" fill="#8ba0b6">A</text>
+<rect class="cell" x="254" y="880" width="14" height="22" fill="#7393b8"/>
+<text class="let" x="261.0" y="891.5" fill="#ffffff">A</text>
+<rect class="cell" x="268" y="880" width="14" height="22" fill="#7393b8"/>
+<text class="let" x="275.0" y="891.5" fill="#ffffff">I</text>
+<rect class="cell" x="282" y="880" width="14" height="22" fill="#7393b8"/>
+<text class="let" x="289.0" y="891.5" fill="#ffffff">L</text>
+<rect class="cell" x="296" y="880" width="14" height="22" fill="#7393b8"/>
+<text class="let" x="303.0" y="891.5" fill="#ffffff">I</text>
+<rect class="cell" x="310" y="880" width="14" height="22" fill="#7393b8"/>
+<text class="let" x="317.0" y="891.5" fill="#ffffff">R</text>
+<rect class="cell" x="324" y="880" width="14" height="22" fill="#7393b8"/>
+<text class="let" x="331.0" y="891.5" fill="#ffffff">T</text>
+<rect class="cell" x="338" y="880" width="14" height="22" fill="#7393b8"/>
+<text class="let" x="345.0" y="891.5" fill="#ffffff">L</text>
+<rect class="cell" x="352" y="880" width="14" height="22" fill="#7393b8"/>
+<text class="let" x="359.0" y="891.5" fill="#ffffff">D</text>
+<rect class="cell" x="366" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="373.0" y="891.5" fill="#8ba0b6">E</text>
+<rect class="cell" x="380" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="387.0" y="891.5" fill="#8ba0b6">G</text>
+<rect class="cell" x="394" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="401.0" y="891.5" fill="#8ba0b6">V</text>
+<rect class="cell" x="408" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="415.0" y="891.5" fill="#8ba0b6">A</text>
+<rect class="cell" x="422" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="429.0" y="891.5" fill="#8ba0b6">A</text>
+<rect class="cell" x="436" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="443.0" y="891.5" fill="#8ba0b6">K</text>
+<rect class="cell" x="450" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="457.0" y="891.5" fill="#8ba0b6">V</text>
+<rect class="cell" x="464" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="471.0" y="891.5" fill="#8ba0b6">I</text>
+<rect class="cell" x="478" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="485.0" y="891.5" fill="#8ba0b6">E</text>
+<rect class="cell" x="492" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="499.0" y="891.5" fill="#8ba0b6">Y</text>
+<rect class="cell" x="506" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="513.0" y="891.5" fill="#8ba0b6">M</text>
+<rect class="cell" x="520" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="527.0" y="891.5" fill="#8ba0b6">T</text>
+<rect class="cell" x="534" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="541.0" y="891.5" fill="#8ba0b6">A</text>
+<rect class="cell" x="548" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="555.0" y="891.5" fill="#8ba0b6">E</text>
+<rect class="cell" x="562" y="880" width="14" height="22" fill="#7393b8"/>
+<text class="let" x="569.0" y="891.5" fill="#ffffff">E</text>
+<rect class="cell" x="576" y="880" width="14" height="22" fill="#7393b8"/>
+<text class="let" x="583.0" y="891.5" fill="#ffffff">K</text>
+<rect class="cell" x="590" y="880" width="14" height="22" fill="#7393b8"/>
+<text class="let" x="597.0" y="891.5" fill="#ffffff">E</text>
+<rect class="cell" x="604" y="880" width="14" height="22" fill="#7393b8"/>
+<text class="let" x="611.0" y="891.5" fill="#ffffff">V</text>
+<rect class="cell" x="618" y="880" width="14" height="22" fill="#7393b8"/>
+<text class="let" x="625.0" y="891.5" fill="#ffffff">L</text>
+<rect class="cell" x="632" y="880" width="14" height="22" fill="#7393b8"/>
+<text class="let" x="639.0" y="891.5" fill="#ffffff">L</text>
+<rect class="cell" x="646" y="880" width="14" height="22" fill="#7393b8"/>
+<text class="let" x="653.0" y="891.5" fill="#ffffff">R</text>
+<rect class="cell" x="660" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="667.0" y="891.5" fill="#8ba0b6">E</text>
+<rect class="cell" x="674" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="681.0" y="891.5" fill="#8ba0b6">I</text>
+<rect class="cell" x="688" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="695.0" y="891.5" fill="#8ba0b6">A</text>
+<rect class="cell" x="702" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="709.0" y="891.5" fill="#8ba0b6">K</text>
+<rect class="cell" x="716" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="723.0" y="891.5" fill="#8ba0b6">F</text>
+<rect class="cell" x="730" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="737.0" y="891.5" fill="#8ba0b6">R</text>
+<rect class="cell" x="744" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="751.0" y="891.5" fill="#8ba0b6">V</text>
+<rect class="cell" x="758" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="765.0" y="891.5" fill="#8ba0b6">Y</text>
+<rect class="cell" x="772" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="779.0" y="891.5" fill="#8ba0b6">K</text>
+<rect class="cell" x="786" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="793.0" y="891.5" fill="#8ba0b6">P</text>
+<rect class="cell" x="800" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="807.0" y="891.5" fill="#8ba0b6">E</text>
+<rect class="cell" x="814" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="821.0" y="891.5" fill="#8ba0b6">T</text>
+<rect class="cell" x="828" y="880" width="14" height="22" fill="#eef2f7"/>
+<text class="let" x="835.0" y="891.5" fill="#8ba0b6">L</text>
+<rect class="edge" x="100" y="880" width="742" height="22" stroke="#6788a7"/>
+<rect class="pad" x="842.5" y="880.5" width="237" height="21"/>
+<rect class="cell" x="100" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="107.0" y="919.5" fill="#b59c63">D</text>
+<rect class="cell" x="114" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="121.0" y="919.5" fill="#b59c63">P</text>
+<rect class="cell" x="128" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="135.0" y="919.5" fill="#b59c63">P</text>
+<rect class="cell" x="142" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="149.0" y="919.5" fill="#b59c63">P</text>
+<rect class="cell" x="156" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="163.0" y="919.5" fill="#b59c63">Q</text>
+<rect class="cell" x="170" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="177.0" y="919.5" fill="#b59c63">D</text>
+<rect class="cell" x="184" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="191.0" y="919.5" fill="#b59c63">P</text>
+<rect class="cell" x="198" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="205.0" y="919.5" fill="#b59c63">L</text>
+<rect class="cell" x="212" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="219.0" y="919.5" fill="#b59c63">L</text>
+<rect class="cell" x="226" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="233.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="240" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="247.0" y="919.5" fill="#b59c63">L</text>
+<rect class="cell" x="254" y="908" width="14" height="22" fill="#d6a840"/>
+<text class="let" x="261.0" y="919.5" fill="#3f300f">L</text>
+<rect class="cell" x="268" y="908" width="14" height="22" fill="#d6a840"/>
+<text class="let" x="275.0" y="919.5" fill="#3f300f">V</text>
+<rect class="cell" x="282" y="908" width="14" height="22" fill="#d6a840"/>
+<text class="let" x="289.0" y="919.5" fill="#3f300f">V</text>
+<rect class="cell" x="296" y="908" width="14" height="22" fill="#d6a840"/>
+<text class="let" x="303.0" y="919.5" fill="#3f300f">L</text>
+<rect class="cell" x="310" y="908" width="14" height="22" fill="#d6a840"/>
+<text class="let" x="317.0" y="919.5" fill="#3f300f">V</text>
+<rect class="cell" x="324" y="908" width="14" height="22" fill="#d6a840"/>
+<text class="let" x="331.0" y="919.5" fill="#3f300f">P</text>
+<rect class="cell" x="338" y="908" width="14" height="22" fill="#d6a840"/>
+<text class="let" x="345.0" y="919.5" fill="#3f300f">D</text>
+<rect class="cell" x="352" y="908" width="14" height="22" fill="#d6a840"/>
+<text class="let" x="359.0" y="919.5" fill="#3f300f">D</text>
+<rect class="cell" x="366" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="373.0" y="919.5" fill="#b59c63">P</text>
+<rect class="cell" x="380" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="387.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="394" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="401.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="408" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="415.0" y="919.5" fill="#b59c63">S</text>
+<rect class="cell" x="422" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="429.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="436" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="443.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="450" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="457.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="464" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="471.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="478" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="485.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="492" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="499.0" y="919.5" fill="#b59c63">P</text>
+<rect class="cell" x="506" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="513.0" y="919.5" fill="#b59c63">D</text>
+<rect class="cell" x="520" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="527.0" y="919.5" fill="#b59c63">D</text>
+<rect class="cell" x="534" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="541.0" y="919.5" fill="#b59c63">P</text>
+<rect class="cell" x="548" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="555.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="562" y="908" width="14" height="22" fill="#d6a840"/>
+<text class="let" x="569.0" y="919.5" fill="#3f300f">S</text>
+<rect class="cell" x="576" y="908" width="14" height="22" fill="#d6a840"/>
+<text class="let" x="583.0" y="919.5" fill="#3f300f">N</text>
+<rect class="cell" x="590" y="908" width="14" height="22" fill="#d6a840"/>
+<text class="let" x="597.0" y="919.5" fill="#3f300f">V</text>
+<rect class="cell" x="604" y="908" width="14" height="22" fill="#d6a840"/>
+<text class="let" x="611.0" y="919.5" fill="#3f300f">S</text>
+<rect class="cell" x="618" y="908" width="14" height="22" fill="#d6a840"/>
+<text class="let" x="625.0" y="919.5" fill="#3f300f">S</text>
+<rect class="cell" x="632" y="908" width="14" height="22" fill="#d6a840"/>
+<text class="let" x="639.0" y="919.5" fill="#3f300f">V</text>
+<rect class="cell" x="646" y="908" width="14" height="22" fill="#d6a840"/>
+<text class="let" x="653.0" y="919.5" fill="#3f300f">V</text>
+<rect class="cell" x="660" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="667.0" y="919.5" fill="#b59c63">S</text>
+<rect class="cell" x="674" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="681.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="688" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="695.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="702" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="709.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="716" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="723.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="730" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="737.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="744" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="751.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="758" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="765.0" y="919.5" fill="#b59c63">P</text>
+<rect class="cell" x="772" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="779.0" y="919.5" fill="#b59c63">D</text>
+<rect class="cell" x="786" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="793.0" y="919.5" fill="#b59c63">P</text>
+<rect class="cell" x="800" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="807.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="814" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="821.0" y="919.5" fill="#b59c63">V</text>
+<rect class="cell" x="828" y="908" width="14" height="22" fill="#fbf4e2"/>
+<text class="let" x="835.0" y="919.5" fill="#b59c63">D</text>
+<rect class="edge" x="100" y="908" width="742" height="22" stroke="#b79c59"/>
+<rect class="pad" x="842.5" y="908.5" width="237" height="21"/>
+<text class="aa-t" x="1098" y="891">amino acids</text>
+<text class="di-t" x="1098" y="919">3Di structure</text>
+<rect x="48" y="985" width="16" height="16" fill="#a2b9d1" stroke="#6788a7"/>
+<text class="note" x="74" y="993">amino-acid information</text>
+<rect x="268.4" y="985" width="16" height="16" fill="#e6c36d" stroke="#b79c59"/>
+<text class="note" x="294.4" y="993">3Di structure</text>
+<rect class="blank" x="424.5" y="985.5" width="15" height="15"/>
+<text class="note" x="450.0" y="993">hidden or to redesign</text>
+<rect class="pad" x="637.7" y="985.5" width="15" height="15"/>
+<text class="note" x="663.2" y="993">padding</text>
+<text class="note" x="1200" y="993" style="text-anchor:end">A real training protein with one illustrative draw</text>
+</svg>

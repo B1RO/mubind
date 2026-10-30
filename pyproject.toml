@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mubind"
+version = "0.1.0"
+description = "Property-conditioned protein diffusion"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.7",
+    "numpy>=1.26",
+    "typer>=0.16",
+    "rich>=13.9",
+    "filelock>=3.16",
+    "questionary>=2.1",
+    "pyarrow>=16",
+    "huggingface-hub>=0.27",
+    "httpx>=0.27",
+    "uv>=0.8",
+    "biopython>=1.84",
+    "tmtools>=0.2",
+]
+
+[project.scripts]
+mubind = "mubind.cli:app"
+
+[project.optional-dependencies]
+preprocessing = ["pyarrow>=16", "huggingface-hub>=0.27"]
+evaluation = ["rapidfuzz>=3.10", "matplotlib>=3.9"]
+
+[tool.setuptools.package-data]
+"mubind.cli" = ["viewer_assets/*"]
+"mubind.artifacts" = ["benchmarks/*.json", "benchmarks/3di_matrix.txt", "benchmarks/ppiref/*.json", "benchmarks/ppiref/complexes/*.pdb", "benchmarks/ppiref/complexes/*.json", "validation/*.json", "validation/*.pdb", "examples/targets/*.json", "examples/targets/*.pdb"]
+

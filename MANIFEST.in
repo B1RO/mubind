@@ -1,0 +1,8 @@
+prune artifacts
+include artifacts/__init__.py
+graft artifacts/benchmarks
+graft artifacts/validation
+graft artifacts/examples
+prune checkpoints
+prune generations
+prune evaluations

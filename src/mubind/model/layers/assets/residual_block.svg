@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="274" viewBox="0 0 880 274" role="img" aria-labelledby="title desc">
+<title id="title">Residual block and time conditioning</title>
+<desc id="desc">How time and spatial conditioning enter ResidualBlock1d</desc>
+<defs><marker id="arrow" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 .6 L8 4 L0 7.4 z" fill="#8f8d85"/></marker></defs>
+<style>text { font-family: 'Segoe UI', -apple-system, Helvetica, Arial, 'DejaVu Sans', sans-serif; fill: #2b3440; } .mono { font-family: ui-monospace, 'Cascadia Mono', Consolas, Menlo, 'DejaVu Sans Mono', monospace; } .muted { fill: #68727f; }</style>
+<path d="M8 15 Q8 8 15 8 H264.0 Q271.0 8 271.0 15 V38 H449 Q456 38 456 45 V73 Q456 80 449 80 H15 Q8 80 8 73 Z" fill="#f6f5f1" stroke="#dcdad1" stroke-width="1.2"/>
+<text x="21" y="29" text-anchor="start"><tspan class="mono" font-size="13.5" fill="#2b3440" font-weight="700">sinusoidal_time_embedding.py</tspan></text>
+<text x="26" y="59" text-anchor="start"><tspan class="mono" font-size="13" fill="#2b3440">t</tspan></text>
+<polyline points="40,54 68,54" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="74" y="59" text-anchor="start"><tspan font-size="13" fill="#2b3440">sin, cos</tspan></text>
+<polyline points="130,54 158,54" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="164" y="59" text-anchor="start"><tspan class="mono muted" font-size="13">[B, E]</tspan></text>
+<polyline points="216,54 244,54" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="250" y="59" text-anchor="start"><tspan class="mono" font-size="13" fill="#2b3440">time_mlp</tspan><tspan class="muted" font-size="13">  unet.py</tspan></text>
+<polyline points="382,54 414,54" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="425" y="59" text-anchor="middle"><tspan class="mono" font-size="14" fill="#2b3440" font-weight="700">τ</tspan></text>
+<path d="M472 15 Q472 8 479 8 H668.5 Q675.5 8 675.5 15 V38 H865 Q872 38 872 45 V73 Q872 80 865 80 H479 Q472 80 472 73 Z" fill="#f6f5f1" stroke="#dcdad1" stroke-width="1.2"/>
+<text x="485" y="29" text-anchor="start"><tspan class="mono" font-size="13.5" fill="#2b3440" font-weight="700">residual_attention.py</tspan></text>
+<text x="490" y="59" text-anchor="start"><tspan font-size="13" fill="#2b3440">ResidualBlock1d</tspan></text>
+<polyline points="602,54 630,54" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="636" y="59" text-anchor="start"><tspan class="mono" font-size="13" fill="#2b3440">make_attention(mode)</tspan></text>
+<path d="M8 103 Q8 96 15 96 H170.5 Q177.5 96 177.5 103 V126 H865 Q872 126 872 133 V259 Q872 266 865 266 H15 Q8 266 8 259 Z" fill="#f6f5f1" stroke="#dcdad1" stroke-width="1.2"/>
+<text x="21" y="117" text-anchor="start"><tspan class="mono" font-size="13.5" fill="#2b3440" font-weight="700">residual_block.py</tspan></text>
+<polyline points="425,63 425,169" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="439" y="146" text-anchor="start"><tspan class="muted" font-size="13">SiLU · Linear</tspan></text>
+<rect x="42.0" y="180.0" width="56" height="24" rx="1.5" fill="#cfd4da" stroke="#98a1ab" stroke-width="1"/>
+<path d="M51.3 180.0V204.0M60.7 180.0V204.0M70.0 180.0V204.0M79.3 180.0V204.0M88.7 180.0V204.0M42.0 192.0H98.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="70" y="172" text-anchor="middle"><tspan class="mono muted" font-size="12.5">[B, C, L]</tspan></text>
+<polyline points="104.0,192 138,192" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="165" y="197" text-anchor="middle"><tspan font-size="13" fill="#2b3440">concat</tspan></text>
+<text x="165" y="140" text-anchor="middle"><tspan class="mono" font-size="13" fill="#2b3440">maps[i]</tspan></text>
+<polyline points="165,146 165,178" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="192,192 234,192" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="275" y="189" text-anchor="middle"><tspan font-size="13" fill="#2b3440">Conv1d k3</tspan></text>
+<text x="275" y="207" text-anchor="middle"><tspan font-size="13" fill="#2b3440">GroupNorm</tspan></text>
+<polyline points="316,192 372,192" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="425" y="189" text-anchor="middle"><tspan font-size="13" fill="#2b3440">× (1 + scale)</tspan></text>
+<text x="425" y="207" text-anchor="middle"><tspan font-size="13" fill="#2b3440">+ shift</tspan></text>
+<polyline points="478,192 504,192" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="525" y="197" text-anchor="middle"><tspan font-size="13" fill="#2b3440">SiLU</tspan></text>
+<polyline points="547,192 570,192" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="622" y="189" text-anchor="middle"><tspan font-size="13" fill="#2b3440">Conv1d k3</tspan></text>
+<text x="622" y="207" text-anchor="middle"><tspan font-size="13" fill="#2b3440">GroupNorm · SiLU</tspan></text>
+<polyline points="680,192 711,192" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<circle cx="725" cy="192" r="11" fill="#ffffff" stroke="#98a1ab" stroke-width="1.1"/>
+<text x="725" y="197" text-anchor="middle"><tspan font-size="15" fill="#2b3440">+</tspan></text>
+<polyline points="737,192 770,192" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<rect x="776.0" y="180.0" width="56" height="24" rx="1.5" fill="#cfd4da" stroke="#98a1ab" stroke-width="1"/>
+<path d="M785.3 180.0V204.0M794.7 180.0V204.0M804.0 180.0V204.0M813.3 180.0V204.0M822.7 180.0V204.0M776.0 192.0H832.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="804" y="172" text-anchor="middle"><tspan class="mono muted" font-size="12.5">[B, C′, L]</tspan></text>
+<polyline points="70,208.0 70,242 725,242 725,205" fill="none" stroke="#a3a096" stroke-dasharray="4 4" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="398" y="235" text-anchor="middle"><tspan class="muted" font-size="13">skip · identity, or 1×1 when C changes</tspan></text>
+</svg>

@@ -1,0 +1,15 @@
+3Dmol.js 2.5.5, BSD-3-Clause
+https://github.com/3dmol/3Dmol.js
+
+Unmodified build/3Dmol-min.js and LICENSE from the official npm package
+https://registry.npmjs.org/3dmol/-/3dmol-2.5.5.tgz
+
+Tarball integrity (SHA-512, base64)
+kqNHouGqq3YfW58174tdERvm0XYTmP0tavQKOqIw1ouc2OJ7epkXEFrtEkVXV0clBZT2Ze2xHRC/qxX0u0qCdw==
+
+3Dmol-min.js SHA-256
+f7cc78921ae72e7623e89cdd111434f58c2efddd2ffda1cd212644b406fb8016
+
+See 3Dmol-LICENSE.txt for all upstream copyright and license notices.
+Exports inline the renderer and license, and omit the source map URL so the
+HTML works offline. No runtime CDN or package download is needed.

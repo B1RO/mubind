@@ -1,0 +1,423 @@
+#!/usr/bin/env python3
+"""Run mubind from a checkout, asking before preparing its Python environment."""
+
+import os
+import sys
+
+# This helper has no third-party imports, including Rich or PyTorch.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "src"))
+from mubind.cli.startup import (
+    finish_provider_startup, handoff_provider_startup,
+    provider_requested, start_cli_startup, startup_message,
+)
+
+if __name__ == "__main__":
+    start_cli_startup(sys.argv[1:])
+
+import hashlib
+import json
+import platform
+import shutil
+import subprocess
+import sysconfig
+import tempfile
+import urllib.request
+import zipfile
+from pathlib import Path
+
+UV_VERSION = "0.8.0"
+
+
+def wheel_platform():
+    architecture = platform.machine().lower()
+    architecture = {"amd64": "x86_64", "arm64": "aarch64"}.get(
+        architecture, architecture
+    )
+    if sys.platform == "win32":
+        return sysconfig.get_platform().replace("-", "_")
+    if sys.platform == "darwin":
+        return (
+            "macosx_11_0_arm64" if architecture == "aarch64" else "macosx_10_12_x86_64"
+        )
+    if sys.platform.startswith("linux"):
+        libc = (
+            "manylinux_2_17" if platform.libc_ver()[0] == "glibc" else "musllinux_1_1"
+        )
+        return f"{libc}_{architecture}"
+    raise RuntimeError(
+        "Automatic installer download is not supported on this platform."
+    )
+
+
+def bootstrap_settings_path():
+    return (
+        Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")).expanduser()
+        / "mubind" / "bootstrap.json"
+    )
+
+
+def load_bootstrap_settings():
+    path = bootstrap_settings_path()
+    if not path.exists():
+        return {}
+    try:
+        settings = json.loads(path.read_text())
+        if not isinstance(settings, dict) or any(
+            not isinstance(value, str) or not value.strip()
+            for key, value in settings.items()
+            if key in ("uv_directory", "environment")
+        ):
+            raise ValueError("Expected folder paths")
+        return settings
+    except ValueError as error:
+        raise RuntimeError(f"Invalid bootstrap settings in {path}: {error}") from error
+
+
+def save_bootstrap_settings(settings, uv_directory, environment):
+    settings = dict(settings)
+    if "XDG_CACHE_HOME" not in os.environ:
+        settings["uv_directory"] = str(uv_directory)
+    if "UV_PROJECT_ENVIRONMENT" not in os.environ:
+        settings["environment"] = str(environment)
+    path = bootstrap_settings_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode="w", dir=path.parent, delete=False) as output:
+        temporary = Path(output.name)
+        json.dump(settings, output, indent=2)
+        output.write("\n")
+    try:
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def bootstrap_uv_path(directory=None):
+    cache = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")).expanduser()
+    name = "uv.exe" if os.name == "nt" else "uv"
+    if directory is None:
+        directory = cache.resolve() / "mubind" / "bootstrap" / f"uv-{UV_VERSION}"
+    return directory / name
+
+
+def find_uv(environment, uv_directory):
+    executable = shutil.which("uv")
+    if executable:
+        return executable
+    cached = bootstrap_uv_path(uv_directory)
+    if cached.is_file() and os.access(cached, os.X_OK):
+        return str(cached)
+    # Reuse an installed copy when neither PATH nor the private cache has uv.
+    name = "uv.exe" if os.name == "nt" else "uv"
+    local = environment / ("Scripts" if os.name == "nt" else "bin") / name
+    if local.is_file() and os.access(local, os.X_OK):
+        return str(local)
+    return None
+
+
+def install_uv(uv_directory):
+    """Download uv only after the user has accepted the bootstrap preview."""
+    # Extract only the standalone executable from the official PyPI wheel.
+    # No pip, activation, or changes to the system Python are necessary.
+    executable = bootstrap_uv_path(uv_directory)
+    directory = executable.parent
+    name = executable.name
+    if not executable.is_file():
+        print(f"Installing the environment manager at: {directory}", flush=True)
+        tag = wheel_platform()
+        with urllib.request.urlopen(
+            f"https://pypi.org/pypi/uv/{UV_VERSION}/json", timeout=30
+        ) as response:
+            release = json.load(response)
+        wheels = [
+            item
+            for item in release["urls"]
+            if item["filename"].endswith(".whl")
+            and tag in item["filename"][:-4].split("-py3-none-")[-1].split(".")
+        ]
+        if len(wheels) != 1:
+            raise RuntimeError(f"No unique uv installer is available for {tag}.")
+        wheel = wheels[0]
+        directory.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=directory) as temporary:
+            download = Path(temporary) / "uv.whl"
+            digest = hashlib.sha256()
+            # Parenthesized multi-context syntax cannot run on Python 3.8.
+            with urllib.request.urlopen(wheel["url"], timeout=60) as response:  # noqa: SIM117
+                with download.open("wb") as output:
+                    while block := response.read(1024 * 1024):
+                        digest.update(block)
+                        output.write(block)
+            if digest.hexdigest() != wheel["digests"]["sha256"]:
+                raise RuntimeError(
+                    "The downloaded environment manager failed checksum verification."
+                )
+            binary = Path(temporary) / name
+            with zipfile.ZipFile(download) as archive:
+                members = [
+                    member
+                    for member in archive.namelist()
+                    if member.endswith(f".data/scripts/{name}")
+                ]
+                if len(members) != 1:
+                    raise RuntimeError(
+                        "The installer archive does not contain the expected executable."
+                    )
+                with archive.open(members[0]) as source, binary.open("wb") as target:
+                    shutil.copyfileobj(source, target)
+            binary.chmod(0o755)
+            binary.replace(executable)
+    return str(executable)
+
+
+def environment_state(uv, environment, options, env):
+    if not (environment / "pyvenv.cfg").is_file():
+        return "new"
+    python = environment / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    if not python.is_file():
+        return "incomplete"
+    if not uv:
+        return "unverified"
+    # Even `uv sync --check` opens an environment lock. Do not let a readiness
+    # probe create it in an incomplete or externally created environment.
+    if not (environment / ".lock").is_file():
+        return "unverified"
+    try:
+        result = subprocess.run(
+            [
+                uv,
+                "sync",
+                *options,
+                "--inexact",
+                "--check",
+                "--locked",
+                "--offline",
+                "--no-python-downloads",
+                "--no-cache",
+            ],
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return "unverified"
+    if result.returncode == 0:
+        return "ready"
+    report = (result.stdout + result.stderr).decode("utf-8", errors="replace").lower()
+    # Only describe an update when uv actually reports package changes.
+    if any(marker in report for marker in ("would install ", "would uninstall ")):
+        return "outdated"
+    return "unverified"
+
+
+def resolve_folder(value, project):
+    path = Path(value).expanduser()
+    return (path if path.is_absolute() else project / path).resolve()
+
+
+def validate_environment(environment):
+    if environment.exists() and (
+        not environment.is_dir()
+        or (not (environment / "pyvenv.cfg").is_file() and any(environment.iterdir()))
+    ):
+        raise RuntimeError(
+            f"The environment directory is not an empty directory or a virtual environment: {environment}"
+        )
+
+
+def choose_bootstrap_folders(uv_directory, environment, project):
+    print("Press Enter to keep a folder. Existing files will not be moved.")
+    choices = []
+    for label, current, override in (
+        ("Installer download folder (uv)", uv_directory, "XDG_CACHE_HOME"),
+        ("mubind Python environment", environment, "UV_PROJECT_ENVIRONMENT"),
+    ):
+        if override in os.environ:
+            print(f"{label} is set by {override}\n  {current}")
+            choices.append(current)
+        else:
+            answer = input(f"{label} [{current}] ").strip()
+            choices.append(resolve_folder(answer, project) if answer else current)
+    uv_directory, environment = choices
+    if uv_directory.exists() and not uv_directory.is_dir():
+        raise RuntimeError(f"Expected a directory: {uv_directory}")
+    validate_environment(environment)
+    return uv_directory, environment
+
+
+def show_bootstrap_summary(environment, uv_directory, uv, state):
+    explanation = {
+        "new": "mubind will create a Python environment and install the packages it needs.",
+        "incomplete": (
+            "This Python environment is missing its Python executable.\n"
+            "mubind will repair it and complete the package installation."
+        ),
+        "outdated": (
+            "This environment's packages do not match mubind's requirements.\n"
+            "mubind will update them before starting."
+        ),
+        "unverified": (
+            "mubind could not confirm that this Python environment is ready.\n"
+            "It will check its packages and install any required changes."
+        ),
+        "ready": "This Python environment is ready. mubind will use it without installing anything.",
+    }[state]
+    print(
+        f"\n{explanation}\n\n"
+        f"mubind Python environment\n  {environment}\n"
+        f"Installer download folder (uv, if needed)\n  {uv_directory}\n",
+        flush=True,
+    )
+    if uv:
+        print(f"Using the existing uv at {uv}.")
+    for name in ("XDG_CACHE_HOME", "UV_PROJECT_ENVIRONMENT"):
+        if name in os.environ:
+            print(f"{name} overrides the saved folder choice.")
+
+
+def confirm_bootstrap(environment, uv_directory, uv, state, assume_yes, project, options, env):
+    while True:
+        show_bootstrap_summary(environment, uv_directory, uv, state)
+        if assume_yes:
+            print("Environment preparation approved by --bootstrap-yes.\n", flush=True)
+            return environment, uv_directory, uv, state
+        if not (sys.stdin.isatty() and sys.stdout.isatty()):
+            print(
+                "Environment preparation needs confirmation. Run in a terminal, or put "
+                "--bootstrap-yes before the subcommand to allow it without prompting.\n"
+                "Nothing was installed.",
+                file=sys.stderr,
+            )
+            return None
+        try:
+            choice = input("[1] Continue  [2] Change folders  [3] Cancel\nChoose [3] ").strip().lower()
+            if choice in ("1", "c", "continue", "y", "yes"):
+                return environment, uv_directory, uv, state
+            if choice in ("2", "f", "change"):
+                uv_directory, environment = choose_bootstrap_folders(
+                    uv_directory, environment, project
+                )
+                uv = find_uv(environment, uv_directory)
+                selected_env = dict(env, UV_PROJECT_ENVIRONMENT=str(environment))
+                state = environment_state(uv, environment, options, selected_env)
+                continue
+            if choice not in ("", "3", "q", "cancel", "n", "no"):
+                print("Please choose 1, 2 or 3.")
+                continue
+        except EOFError:
+            print()
+        print("Environment preparation cancelled. Nothing was installed.", flush=True)
+        return None
+
+
+def main():
+    arguments = sys.argv[1:]
+    assume_yes = False
+    configure = False
+    # Only launcher-prefix flags belong to us. In particular, `setup --yes`
+    # must still reach setup and must not authorize bootstrap installations.
+    while arguments and arguments[0] in ("--bootstrap-yes", "--configure-bootstrap"):
+        if arguments[0] == "--bootstrap-yes":
+            assume_yes = True
+        else:
+            configure = True
+        arguments = arguments[1:]
+
+    project = Path(__file__).resolve().parent
+    settings = load_bootstrap_settings()
+    environment = resolve_folder(os.environ.get(
+        "UV_PROJECT_ENVIRONMENT", settings.get("environment", project / ".venv")
+    ), project)
+    uv_directory = bootstrap_uv_path().parent
+    if "XDG_CACHE_HOME" not in os.environ and "uv_directory" in settings:
+        uv_directory = resolve_folder(settings["uv_directory"], project)
+    interactive = sys.stdin.isatty() and sys.stdout.isatty()
+    if configure:
+        if arguments or assume_yes or not interactive:
+            raise RuntimeError("Run ./mubind --configure-bootstrap by itself in a terminal.")
+        try:
+            print(
+                "Choose where mubind keeps its installer (uv) and Python environment.\n"
+                "This only saves folder choices; nothing will be installed or moved.\n"
+            )
+            uv_directory, environment = choose_bootstrap_folders(
+                uv_directory, environment, project
+            )
+            print(f"uv download folder\n  {uv_directory}\nPython environment folder\n  {environment}")
+            if input("Save these folders? [y/N] ").strip().lower() not in ("y", "yes"):
+                return 0
+        except EOFError:
+            print("\nFolder changes cancelled.")
+            return 0
+        save_bootstrap_settings(settings, uv_directory, environment)
+        print("Folders saved. Existing files were not moved. Run ./mubind setup when ready.")
+        return 0
+    validate_environment(environment)
+    env = os.environ.copy()
+    for name in ("VIRTUAL_ENV", "PYTHONHOME", "PYTHONPATH"):
+        env.pop(name, None)
+    env["UV_PROJECT_ENVIRONMENT"] = str(environment)
+    # The main menu also offers paper evaluation, including saved-result plots.
+    evaluation = not arguments or arguments[:1] == ["evaluate"]
+    options = [
+        "--project",
+        str(project),
+        "--python",
+        "3.12",
+        "--no-dev",
+        "--no-install-project",
+        *(["--extra", "evaluation"] if evaluation else []),
+    ]
+    uv = find_uv(environment, uv_directory)
+    startup_message("Checking the Python environment…")
+    state = environment_state(uv, environment, options, env)
+    if state != "ready":
+        finish_provider_startup()
+        confirmed = confirm_bootstrap(
+            environment, uv_directory, uv, state, assume_yes, project, options, env
+        )
+        if confirmed is None:
+            return 0 if sys.stdin.isatty() and sys.stdout.isatty() else 2
+        environment, uv_directory, uv, state = confirmed
+        env["UV_PROJECT_ENVIRONMENT"] = str(environment)
+        save_bootstrap_settings(settings, uv_directory, environment)
+        if state != "ready":
+            uv = uv or install_uv(uv_directory)
+            # Keep installed extras when switching back from evaluation.
+            # A failed sync never opens the CLI.
+            subprocess.run([uv, "sync", *options, "--inexact"], env=env, check=True)
+
+    start_cli_startup(arguments)
+    handoff_provider_startup(env)
+    # Dependencies may be shared by checkouts. Import this checkout directly
+    # instead of reinstalling its editable package whenever the user switches.
+    python = environment / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    env["PYTHONPATH"] = str(project / "src")
+    env["VIRTUAL_ENV"] = str(environment)
+    env["PATH"] = str(python.parent) + os.pathsep + env.get("PATH", "")
+    command = [str(python), "-m", "mubind", *arguments]
+    if os.name == "nt":
+        return subprocess.call(command, env=env)
+    os.execve(str(python), command, env)
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        finish_provider_startup()
+        print("\nCancelled.", flush=True)
+        sys.exit(130)
+    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
+        finish_provider_startup()
+        print(
+            f"Could not prepare the mubind environment: {error}",
+            file=sys.stderr,
+        )
+        print(
+            "If uv is missing, install it from https://docs.astral.sh/uv/getting-started/installation/",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    finally:
+        finish_provider_startup()

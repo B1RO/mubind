@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="290" viewBox="0 0 880 290" role="img" aria-labelledby="title desc">
+<title id="title">Attention layers</title>
+<desc id="desc">What self, linear and cross attention each compare, and at what size</desc>
+<defs><marker id="arrow" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 .6 L8 4 L0 7.4 z" fill="#8f8d85"/></marker></defs>
+<style>text { font-family: 'Segoe UI', -apple-system, Helvetica, Arial, 'DejaVu Sans', sans-serif; fill: #2b3440; } .mono { font-family: ui-monospace, 'Cascadia Mono', Consolas, Menlo, 'DejaVu Sans Mono', monospace; } .muted { fill: #68727f; }</style>
+<path d="M8 15 Q8 8 15 8 H170.5 Q177.5 8 177.5 15 V38 H279 Q286 38 286 45 V275 Q286 282 279 282 H15 Q8 282 8 275 Z" fill="#f6f5f1" stroke="#dcdad1" stroke-width="1.2"/>
+<text x="21" y="29" text-anchor="start"><tspan class="mono" font-size="13.5" fill="#2b3440" font-weight="700">self_attention.py</tspan></text>
+<rect x="38.0" y="54.0" width="64" height="12" rx="1.5" fill="#cfd4da" stroke="#98a1ab" stroke-width="1"/>
+<path d="M48.7 54.0V66.0M59.3 54.0V66.0M70.0 54.0V66.0M80.7 54.0V66.0M91.3 54.0V66.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="112" y="64.5" text-anchor="start"><tspan class="mono" font-size="13" fill="#2b3440">x</tspan></text>
+<rect x="38.0" y="250.0" width="64" height="12" rx="1.5" fill="#cfd4da" stroke="#98a1ab" stroke-width="1"/>
+<path d="M48.7 250.0V262.0M59.3 250.0V262.0M70.0 250.0V262.0M80.7 250.0V262.0M91.3 250.0V262.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="112" y="260.5" text-anchor="start"><tspan class="mono" font-size="13" fill="#2b3440">x</tspan><tspan class="muted" font-size="13"> + update</tspan></text>
+<path d="M301 15 Q301 8 308 8 H480.5 Q487.5 8 487.5 15 V38 H572 Q579 38 579 45 V275 Q579 282 572 282 H308 Q301 282 301 275 Z" fill="#f6f5f1" stroke="#dcdad1" stroke-width="1.2"/>
+<text x="314" y="29" text-anchor="start"><tspan class="mono" font-size="13.5" fill="#2b3440" font-weight="700">linear_attention.py</tspan></text>
+<rect x="331.0" y="54.0" width="64" height="12" rx="1.5" fill="#cfd4da" stroke="#98a1ab" stroke-width="1"/>
+<path d="M341.7 54.0V66.0M352.3 54.0V66.0M363.0 54.0V66.0M373.7 54.0V66.0M384.3 54.0V66.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="405" y="64.5" text-anchor="start"><tspan class="mono" font-size="13" fill="#2b3440">x</tspan></text>
+<rect x="331.0" y="250.0" width="64" height="12" rx="1.5" fill="#cfd4da" stroke="#98a1ab" stroke-width="1"/>
+<path d="M341.7 250.0V262.0M352.3 250.0V262.0M363.0 250.0V262.0M373.7 250.0V262.0M384.3 250.0V262.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="405" y="260.5" text-anchor="start"><tspan class="mono" font-size="13" fill="#2b3440">x</tspan><tspan class="muted" font-size="13"> + update</tspan></text>
+<path d="M594 15 Q594 8 601 8 H765.0 Q772.0 8 772.0 15 V38 H865 Q872 38 872 45 V275 Q872 282 865 282 H601 Q594 282 594 275 Z" fill="#f6f5f1" stroke="#dcdad1" stroke-width="1.2"/>
+<text x="607" y="29" text-anchor="start"><tspan class="mono" font-size="13.5" fill="#2b3440" font-weight="700">cross_attention.py</tspan></text>
+<rect x="624.0" y="54.0" width="64" height="12" rx="1.5" fill="#cfd4da" stroke="#98a1ab" stroke-width="1"/>
+<path d="M634.7 54.0V66.0M645.3 54.0V66.0M656.0 54.0V66.0M666.7 54.0V66.0M677.3 54.0V66.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="698" y="64.5" text-anchor="start"><tspan class="mono" font-size="13" fill="#2b3440">x</tspan></text>
+<rect x="624.0" y="250.0" width="64" height="12" rx="1.5" fill="#cfd4da" stroke="#98a1ab" stroke-width="1"/>
+<path d="M634.7 250.0V262.0M645.3 250.0V262.0M656.0 250.0V262.0M666.7 250.0V262.0M677.3 250.0V262.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="698" y="260.5" text-anchor="start"><tspan class="mono" font-size="13" fill="#2b3440">x</tspan><tspan class="muted" font-size="13"> + update</tspan></text>
+<polyline points="70,70 70,114" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="84" y="96" text-anchor="start"><tspan class="muted" font-size="13">RMSNorm → Q, K, V</tspan></text>
+<rect x="28.0" y="118.0" width="84" height="84" rx="1.5" fill="#cfd4da" stroke="#98a1ab" stroke-width="1"/>
+<path d="M40.0 118.0V202.0M52.0 118.0V202.0M64.0 118.0V202.0M76.0 118.0V202.0M88.0 118.0V202.0M100.0 118.0V202.0M28.0 130.0H112.0M28.0 142.0H112.0M28.0 154.0H112.0M28.0 166.0H112.0M28.0 178.0H112.0M28.0 190.0H112.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="124.0" y="156" text-anchor="start"><tspan class="mono" font-size="14" fill="#2b3440" font-weight="700">L × L</tspan></text>
+<text x="124.0" y="175" text-anchor="start"><tspan class="muted" font-size="13">every pair of positions</tspan></text>
+<polyline points="70,206.0 70,245" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="84" y="226" text-anchor="start"><tspan class="muted" font-size="13">× V → 1×1</tspan></text>
+<polyline points="363,70 363,134" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="377" y="96" text-anchor="start"><tspan class="muted" font-size="13">RMSNorm → Q, K, V</tspan></text>
+<rect x="343.0" y="140.0" width="40" height="40" rx="1.5" fill="#cfd4da" stroke="#98a1ab" stroke-width="1"/>
+<path d="M356.3 140.0V180.0M369.7 140.0V180.0M343.0 153.3H383.0M343.0 166.7H383.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="395.0" y="156" text-anchor="start"><tspan class="mono" font-size="14" fill="#2b3440" font-weight="700">d × d</tspan></text>
+<text x="395.0" y="175" text-anchor="start"><tspan class="muted" font-size="13">feature summary</tspan></text>
+<polyline points="363,184.0 363,245" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="377" y="226" text-anchor="start"><tspan class="muted" font-size="13">× Q → 1×1 · RMSNorm</tspan></text>
+<polyline points="656,70 656,114" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="670" y="96" text-anchor="start"><tspan class="muted" font-size="13">LayerNorm → Q</tspan></text>
+<rect x="632.0" y="118.0" width="48" height="84" rx="1.5" fill="#ead087" stroke="#c8a544" stroke-width="1"/>
+<path d="M644.0 118.0V202.0M656.0 118.0V202.0M668.0 118.0V202.0M632.0 130.0H680.0M632.0 142.0H680.0M632.0 154.0H680.0M632.0 166.0H680.0M632.0 178.0H680.0M632.0 190.0H680.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<polyline points="858,160 686.0,160" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="698.0" y="151" text-anchor="start"><tspan class="mono" font-size="13" fill="#94700f">threedi</tspan><tspan class="muted" font-size="13"> → K, V</tspan></text>
+<text x="698.0" y="180" text-anchor="start"><tspan class="mono" font-size="14" fill="#2b3440" font-weight="700">L × S</tspan></text>
+<polyline points="656,206.0 656,245" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="670" y="226" text-anchor="start"><tspan class="muted" font-size="13">× V → Linear, starts at 0</tspan></text>
+</svg>

@@ -1,0 +1,481 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1220" height="956" viewBox="0 0 1220 956" role="img">
+<title>How spans.py lays out masked spans for L = 62 residues and a budget of B = 20</title>
+<desc>sample_edit_spans_for_budget receives a seed of L = 62 residues and an edit budget of B = 20, which fixes two pools, 20 masked blocks and L - B = 42 kept blocks. Step 1, _sample_truncated_geometric with p = 0.5 draws the span count K once, from 1 to B, where K = 1 has probability 50%, K = 2 25%, K = 3 12.5% and K of 4 or more 12.5%; here K = 2. K feeds two Dirichlet-multinomial draws. Step 2 splits the 20 masked blocks into K = 2 spans, each with at least 1 block, span_0 = 13 and span_1 = 7. Step 3 splits the 42 kept blocks into K + 1 = 3 gaps, gap_0 = 11, gap_1 = 19 and gap_2 = 12, and a gap may be 0. Interleaving [gap_0, span_0, gap_1, span_1, gap_2] gives one 62-residue bar with the half-open spans [(11, 24), (43, 50)]. If an inner gap draws 0, the two spans touch and merge into one, for example (11, 31). sample_edit_masks_for_budgets draws the same layout for a whole batch and returns a boolean mask.</desc>
+<style>
+text { font-family: "DejaVu Sans", Verdana, "Segoe UI", sans-serif; }
+.folder, .file-name, .code, .code-dim, .key { font-family: "DejaVu Sans Mono", Consolas, monospace; }
+.file { fill: #f6f5f1; stroke: #d5d3ca; }
+.file-name { font-size: 13px; font-weight: 700; fill: #2b2b2b; }
+.card { fill: #ffffff; stroke: #cfcdc5; }
+.card-head { fill: #edece7; }
+.card-rule { stroke: #cfcdc5; }
+.folder { font-size: 11px; font-weight: 700; fill: #2b2b2b; }
+.head-aside { font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 10px; fill: #8a8a8a; text-anchor: end; }
+.aa-ink { fill: #3b5876; }
+.mk-ink { fill: #5f5c55; }
+.tick { font-size: 10px; fill: #7a7a7a; text-anchor: middle; }
+.code { font-size: 10px; fill: #3f4752; }
+.code-dim { font-size: 10px; fill: #9a978e; }
+.key { font-size: 11px; font-weight: 700; fill: #2b2b2b; }
+.side { font-size: 10px; fill: #8a8a8a; }
+.note { font-size: 11.5px; fill: #5f6b7a; }
+.lut { stroke: #ffffff; stroke-width: 1; }
+.blk-mask { fill: #ebe9e3; stroke: #a9a69d; stroke-width: 0.6; }
+.blk-keep { fill: #b4c5d7; stroke: #7d95b8; stroke-width: 0.6; }
+.cut { stroke: #6b6b6b; stroke-dasharray: 3 2; }
+.axis { stroke: #cfcdc5; }
+.pick { fill: none; stroke: #3f4752; stroke-width: 1.2; }
+.arrow { stroke: #8c8c8c; stroke-width: 1.2; fill: none; }
+.head { fill: #8c8c8c; }
+.flow-keep { fill: none; stroke: #5d7fa5; stroke-width: 2; }
+.flow-keep-head { fill: #5d7fa5; }
+.flow-mask { fill: none; stroke: #c2bfb6; stroke-width: 2; }
+.flow-mask-head { fill: #c2bfb6; }
+.bracket { fill: none; stroke: #b9b6ad; }
+.align { fill: none; stroke: #b9b6ad; stroke-dasharray: 2 2; }
+</style>
+<rect width="1220" height="956" fill="#ffffff"/>
+<path class="file" d="M24 25Q24 20 29 20H105.64Q110.64 20 110.64 25V48H1191Q1196 48 1196 53V931Q1196 936 1191 936H29Q24 936 24 931Z"/>
+<text class="file-name" x="36" y="39">spans.py</text>
+<rect class="card" x="46" y="72" width="1128" height="132" rx="4"/>
+<path class="card-head" d="M46 94V76Q46 72 50 72H1170Q1174 72 1174 76V94Z"/>
+<line class="card-rule" x1="46" y1="94" x2="1174" y2="94"/>
+<text class="folder" x="56" y="87">inputs</text>
+<text class="head-aside" x="1164" y="87">sample_edit_spans_for_budget(seed_length, budget)</text>
+<text class="key" x="288" y="123" text-anchor="end">L = 62</text>
+<rect class="lut" x="300" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="310" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="320" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="330" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="340" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="350" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="360" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="370" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="380" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="390" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="400" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="410" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="420" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="430" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="440" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="450" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="460" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="470" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="480" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="490" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="500" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="510" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="520" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="530" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="540" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="550" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="560" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="570" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="580" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="590" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="600" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="610" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="620" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="630" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="640" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="650" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="660" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="670" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="680" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="690" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="700" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="710" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="720" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="730" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="740" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="750" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="760" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="770" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="780" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="790" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="800" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="810" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="820" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="830" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="840" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="850" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="860" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="870" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="880" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="890" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="900" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="910" y="112" width="10" height="14" fill="#b4c5d7"/>
+<rect x="300" y="112" width="620" height="14" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<text class="tick" x="300" y="140">0</text>
+<text class="tick" x="920" y="140">62</text>
+<text class="side" x="610" y="140" text-anchor="middle">62 residues of the seed</text>
+<rect class="blk-mask" x="67" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="77" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="87" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="97" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="107" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="117" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="127" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="137" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="147" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="157" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="167" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="177" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="187" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="197" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="207" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="217" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="227" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="237" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="247" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="257" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="685" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="695" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="705" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="715" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="725" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="735" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="745" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="755" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="765" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="775" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="785" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="795" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="805" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="815" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="825" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="835" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="845" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="855" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="865" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="875" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="885" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="895" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="905" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="915" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="925" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="935" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="945" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="955" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="965" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="975" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="985" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="995" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1005" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1015" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1025" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1035" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1045" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1055" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1065" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1075" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1085" y="160" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1095" y="160" width="8" height="12" rx="1.5"/>
+<text class="side mk-ink" x="166" y="188" text-anchor="middle">B = 20 masked</text>
+<text class="side aa-ink" x="894" y="188" text-anchor="middle">L − B = 42 kept</text>
+<text class="note" x="475.0" y="169" text-anchor="middle">Only the two counts are fixed here.</text>
+<text class="note" x="475.0" y="187" text-anchor="middle">Where the masked residues go comes next.</text>
+<rect class="card" x="479" y="250" width="262" height="172" rx="4"/>
+<path class="card-head" d="M479 272V254Q479 250 483 250H737Q741 250 741 254V272Z"/>
+<line class="card-rule" x1="479" y1="272" x2="741" y2="272"/>
+<text class="folder" x="489" y="265">_sample_truncated_geometric</text>
+<text class="head-aside" x="731" y="265">p = 0.5</text>
+<text class="key" x="491" y="292">1</text>
+<text class="side" x="505" y="292">how many spans, K from 1 to B</text>
+<rect x="511" y="320" width="36" height="56" fill="#d4dfea"/>
+<text class="tick" x="529" y="315">50%</text>
+<text class="code-dim" x="529" y="391" text-anchor="middle">K = 1</text>
+<rect x="565" y="348" width="36" height="28" fill="#5d7fa5"/>
+<text class="tick" x="583" y="343">25%</text>
+<text class="key" x="583" y="391" text-anchor="middle">K = 2</text>
+<rect class="pick" x="557" y="330" width="52" height="66" rx="3"/>
+<rect x="619" y="362" width="36" height="14" fill="#d4dfea"/>
+<text class="tick" x="637" y="357">12.5%</text>
+<text class="code-dim" x="637" y="391" text-anchor="middle">K = 3</text>
+<rect x="673" y="362" width="36" height="14" fill="#d4dfea"/>
+<text class="tick" x="691" y="357">12.5%</text>
+<text class="code-dim" x="691" y="391" text-anchor="middle">K = 4+</text>
+<line class="axis" x1="505" y1="376" x2="715" y2="376"/>
+<text class="side" x="610.0" y="412" text-anchor="middle">drawn once, each extra span half as likely</text>
+<rect class="card" x="46" y="466" width="550" height="142" rx="4"/>
+<path class="card-head" d="M46 488V470Q46 466 50 466H592Q596 466 596 470V488Z"/>
+<line class="card-rule" x1="46" y1="488" x2="596" y2="488"/>
+<text class="folder" x="56" y="481">_dirichlet_multinomial_counts</text>
+<text class="head-aside" x="586" y="481">concentration = 0.5</text>
+<text class="key" x="58" y="508">2</text>
+<text class="side" x="72" y="508">20 masked into K = 2 spans, at least 1 each</text>
+<rect class="blk-mask" x="67" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="77" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="87" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="97" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="107" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="117" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="127" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="137" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="147" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="157" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="167" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="177" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="187" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="197" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="207" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="217" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="227" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="237" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="247" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-mask" x="257" y="526" width="8" height="12" rx="1.5"/>
+<line class="cut" x1="196" y1="522" x2="196" y2="542"/>
+<rect class="lut" x="66" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="76" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="86" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="96" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="106" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="116" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="126" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="136" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="146" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="156" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="166" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="176" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="186" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect x="66" y="564" width="130" height="14" fill="none" stroke="#a9a69d" stroke-width="0.8"/>
+<text class="code mk-ink" x="131.0" y="594" text-anchor="middle">span_0 = 13</text>
+<rect class="lut" x="210" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="220" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="230" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="240" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="250" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="260" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect class="lut" x="270" y="564" width="10" height="14" fill="#ebe9e3"/>
+<rect x="210" y="564" width="70" height="14" fill="none" stroke="#a9a69d" stroke-width="0.8"/>
+<text class="code mk-ink" x="245.0" y="594" text-anchor="middle">span_1 = 7</text>
+<rect class="card" x="624" y="466" width="550" height="142" rx="4"/>
+<path class="card-head" d="M624 488V470Q624 466 628 466H1170Q1174 466 1174 470V488Z"/>
+<line class="card-rule" x1="624" y1="488" x2="1174" y2="488"/>
+<text class="folder" x="634" y="481">_dirichlet_multinomial_counts</text>
+<text class="head-aside" x="1164" y="481">concentration = 0.5</text>
+<text class="key" x="636" y="508">3</text>
+<text class="side" x="650" y="508">42 kept into K + 1 = 3 gaps, a gap can be 0</text>
+<rect class="blk-keep" x="685" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="695" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="705" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="715" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="725" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="735" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="745" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="755" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="765" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="775" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="785" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="795" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="805" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="815" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="825" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="835" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="845" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="855" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="865" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="875" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="885" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="895" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="905" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="915" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="925" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="935" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="945" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="955" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="965" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="975" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="985" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="995" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1005" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1015" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1025" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1035" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1045" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1055" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1065" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1075" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1085" y="526" width="8" height="12" rx="1.5"/>
+<rect class="blk-keep" x="1095" y="526" width="8" height="12" rx="1.5"/>
+<line class="cut" x1="794" y1="522" x2="794" y2="542"/>
+<line class="cut" x1="984" y1="522" x2="984" y2="542"/>
+<rect class="lut" x="684" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="694" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="704" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="714" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="724" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="734" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="744" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="754" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="764" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="774" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="784" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect x="684" y="564" width="110" height="14" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<text class="code aa-ink" x="739.0" y="594" text-anchor="middle">gap_0 = 11</text>
+<rect class="lut" x="808" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="818" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="828" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="838" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="848" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="858" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="868" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="878" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="888" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="898" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="908" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="918" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="928" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="938" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="948" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="958" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="968" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="978" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="988" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect x="808" y="564" width="190" height="14" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<text class="code aa-ink" x="903.0" y="594" text-anchor="middle">gap_1 = 19</text>
+<rect class="lut" x="1012" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="1022" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="1032" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="1042" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="1052" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="1062" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="1072" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="1082" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="1092" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="1102" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="1112" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect class="lut" x="1122" y="564" width="10" height="14" fill="#b4c5d7"/>
+<rect x="1012" y="564" width="120" height="14" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<text class="code aa-ink" x="1072.0" y="594" text-anchor="middle">gap_2 = 12</text>
+<line class="arrow" x1="166" y1="204" x2="166" y2="460"/>
+<path class="head" d="M162 459L166 466L170 459Z"/>
+<line class="arrow" x1="894" y1="204" x2="894" y2="460"/>
+<path class="head" d="M890 459L894 466L898 459Z"/>
+<line class="arrow" x1="610" y1="204" x2="610" y2="244"/>
+<path class="head" d="M606 243L610 250L614 243Z"/>
+<text class="key" x="620" y="231">B = 20</text>
+<path class="arrow" d="M479 336.0H395Q389 336.0 389 342.0V460"/>
+<path class="head" d="M385 459L389 466L393 459Z"/>
+<text class="key" x="434.0" y="328.0" text-anchor="middle">K = 2</text>
+<path class="arrow" d="M741 336.0H825Q831 336.0 831 342.0V460"/>
+<path class="head" d="M827 459L831 466L835 459Z"/>
+<text class="key" x="786.0" y="328.0" text-anchor="middle">K + 1 = 3</text>
+<rect class="card" x="46" y="692" width="1128" height="222" rx="4"/>
+<path class="card-head" d="M46 714V696Q46 692 50 692H1170Q1174 692 1174 696V714Z"/>
+<line class="card-rule" x1="46" y1="714" x2="1174" y2="714"/>
+<text class="folder" x="56" y="707">interleave</text>
+<text class="head-aside" x="1164" y="707">[gap_0, span_0, gap_1, span_1, gap_2]</text>
+<text class="key" x="284" y="754" text-anchor="end">mask</text>
+<path class="flow-keep" d="M739 608C739 687.8 355 661.2 355 735"/>
+<path class="flow-keep-head" d="M350 732L355 741L360 732Z"/>
+<rect class="lut" x="300" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="310" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="320" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="330" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="340" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="350" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="360" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="370" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="380" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="390" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="400" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect x="300" y="742" width="110" height="16" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<path class="flow-mask" d="M131 608C131 687.8 475 661.2 475 735"/>
+<path class="flow-mask-head" d="M470 732L475 741L480 732Z"/>
+<rect class="lut" x="410" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="420" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="430" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="440" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="450" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="460" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="470" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="480" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="490" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="500" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="510" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="520" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="530" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect x="410" y="742" width="130" height="16" fill="none" stroke="#a9a69d" stroke-width="0.8"/>
+<path class="flow-keep" d="M903 608C903 687.8 635 661.2 635 735"/>
+<path class="flow-keep-head" d="M630 732L635 741L640 732Z"/>
+<rect class="lut" x="540" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="550" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="560" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="570" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="580" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="590" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="600" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="610" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="620" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="630" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="640" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="650" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="660" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="670" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="680" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="690" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="700" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="710" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="720" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect x="540" y="742" width="190" height="16" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<path class="flow-mask" d="M245 608C245 687.8 765 661.2 765 735"/>
+<path class="flow-mask-head" d="M760 732L765 741L770 732Z"/>
+<rect class="lut" x="730" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="740" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="750" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="760" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="770" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="780" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect class="lut" x="790" y="742" width="10" height="16" fill="#ebe9e3"/>
+<rect x="730" y="742" width="70" height="16" fill="none" stroke="#a9a69d" stroke-width="0.8"/>
+<path class="flow-keep" d="M1072 608C1072 687.8 860 661.2 860 735"/>
+<path class="flow-keep-head" d="M855 732L860 741L865 732Z"/>
+<rect class="lut" x="800" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="810" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="820" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="830" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="840" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="850" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="860" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="870" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="880" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="890" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="900" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect class="lut" x="910" y="742" width="10" height="16" fill="#b4c5d7"/>
+<rect x="800" y="742" width="120" height="16" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<text class="tick" x="300" y="772">0</text>
+<text class="tick" x="410" y="772">11</text>
+<text class="tick" x="540" y="772">24</text>
+<text class="tick" x="730" y="772">43</text>
+<text class="tick" x="800" y="772">50</text>
+<text class="tick" x="920" y="772">62</text>
+<text class="side" x="934" y="754">62 residues</text>
+<text class="side" x="934" y="797">half-open, end excluded</text>
+<path class="bracket" d="M411 780V784H539V780"/>
+<text class="code mk-ink" x="475.0" y="797" text-anchor="middle">(11, 24)</text>
+<path class="bracket" d="M731 780V784H799V780"/>
+<text class="code mk-ink" x="765.0" y="797" text-anchor="middle">(43, 50)</text>
+<line class="card-rule" x1="58" y1="810" x2="1162" y2="810"/>
+<text class="code" x="58" y="834"><tspan font-weight="700" fill="#2b2b2b">spans</tspan> = [<tspan class="mk-ink">(11, 24)</tspan>, <tspan class="mk-ink">(43, 50)</tspan>]</text>
+<text class="note" x="58" y="862">sample_edit_masks_for_budgets draws the same layout</text>
+<text class="note" x="58" y="880">for a whole batch at once, as a boolean mask.</text>
+<line class="card-rule" x1="596" y1="822" x2="596" y2="902"/>
+<text class="key" x="620" y="834">if an inner gap draws 0</text>
+<text class="code-dim" x="800" y="834">gap_1 = 0, gap_2 = 31</text>
+<rect x="620" y="848" width="44" height="14" fill="#b4c5d7"/>
+<rect x="664" y="848" width="52" height="14" fill="#ebe9e3"/>
+<rect x="716" y="848" width="28" height="14" fill="#ebe9e3"/>
+<rect x="744" y="848" width="124" height="14" fill="#b4c5d7"/>
+<rect x="620" y="848" width="44" height="14" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="664" y="848" width="80" height="14" fill="none" stroke="#a9a69d" stroke-width="0.8"/>
+<rect x="744" y="848" width="124" height="14" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<line class="cut" x1="716" y1="844" x2="716" y2="864"/>
+<text class="tick" x="664" y="876">11</text>
+<text class="tick" x="716" y="876">24</text>
+<text class="tick" x="744" y="876">31</text>
+<path class="bracket" d="M665 884V888H743V884"/>
+<text class="code mk-ink" x="704.0" y="901" text-anchor="middle">(11, 31)</text>
+<text class="note" x="892" y="859">span_0 and span_1 touch,</text>
+<text class="note" x="892" y="877">so they merge into one span.</text>
+</svg>

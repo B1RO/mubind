@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mubind · View designs</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #24303b; background: #f8fafc; font: 15px system-ui, sans-serif; }
+    header { padding: 18px 24px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; border-bottom: 1px solid #e2e8f0; background: white; }
+    h1 { margin: 0; font-size: 19px; letter-spacing: -.5px; }
+    #run { color: #64748b; font-size: 12px; margin-top: 4px; overflow-wrap: anywhere; }
+    .choice { display: flex; align-items: center; gap: 10px; flex: 1; }
+    select, button { font: inherit; background: white; border: 1px solid #cbd5e1; border-radius: 7px; padding: 8px 12px; color: inherit; }
+    select { max-width: min(440px, 70vw); text-overflow: ellipsis; }
+    button { cursor: pointer; }
+    button:hover { background: #f1f5f9; }
+    :focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
+    main { position: relative; }
+    #viewer { position: relative; width: 100%; height: calc(100dvh - 180px); min-height: 300px; }
+    #notice { position: absolute; top: 30%; left: 50%; transform: translateX(-50%); background: white; padding: 16px 24px; border-radius: 8px; max-width: 90%; text-align: center; }
+    #notice[hidden] { display: none; }
+    footer { padding: 12px 24px; display: flex; align-items: center; flex-wrap: wrap; gap: 12px 24px; font-size: 13px; color: #64748b; }
+    .legend { display: flex; gap: 18px; color: #334155; }
+    .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+    #metrics { font-variant-numeric: tabular-nums; }
+    .hint { width: 100%; font-size: 12px; }
+    @media (max-width: 640px) { header { padding: 12px; gap: 12px; } .choice { flex-basis: 100%; } footer { padding: 12px; } #viewer { height: 58dvh; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div><h1>mubind</h1><div id="run"></div></div>
+    <div class="choice"><label for="candidate">Design</label><select id="candidate"></select></div>
+    <button id="reset" type="button">Reset view</button>
+    <button id="save" type="button">Save HTML</button>
+  </header>
+  <main>
+    <div id="viewer" role="img" aria-label="Interactive predicted target and binder complex"></div>
+    <div id="notice" role="status">Loading structure…</div>
+  </main>
+  <footer>
+    <div class="legend">
+      <span><span class="dot" style="background:#a1aab6"></span>Target</span>
+      <span><span class="dot" style="background:#2563eb"></span>Binder</span>
+    </div>
+    <span id="metrics"></span>
+    <div class="hint">Drag to rotate · Scroll to zoom · Predicted structures · Rendered with 3Dmol.js</div>
+  </footer>
+  <noscript>Enable JavaScript to view these structures.</noscript>
+  <script id="preview-data" type="application/json">@@DATA@@</script>
+  <script id="third-party-license" type="text/plain">3Dmol.js 2.5.5
+@@LICENSE@@</script>
+  <script>@@LIBRARY@@</script>
+  <script>
+    (() => {
+      const data = JSON.parse(document.getElementById("preview-data").textContent);
+      const selector = document.getElementById("candidate");
+      const notice = document.getElementById("notice");
+      const metrics = document.getElementById("metrics");
+      const container = document.getElementById("viewer");
+      document.getElementById("run").textContent = data.run;
+      document.title = `mubind · ${data.run}`;
+      selector.replaceChildren();
+      data.candidates.forEach((candidate, index) => {
+        selector.add(new Option(`${index + 1} · ${candidate.id}`, String(index)));
+      });
+      let viewer;
+      let initialView;
+      let drawVersion = 0;
+      const showError = message => {
+        notice.textContent = message;
+        notice.hidden = false;
+      };
+      try {
+        container.replaceChildren();
+        viewer = $3Dmol.createViewer(container, {backgroundColor: "#f8fafc", antialias: true});
+      } catch (error) {
+        showError("The 3D viewer needs WebGL. Enable hardware acceleration or try another browser.");
+      }
+      function draw() {
+        if (!viewer) return;
+        const version = ++drawVersion;
+        const candidate = data.candidates[Number(selector.value)];
+        showError("Loading structure…");
+        metrics.textContent = [
+          ["Binder pLDDT", candidate.plddt], ["ipTM", candidate.iptm]
+        ].filter(([, value]) => value !== null)
+         .map(([label, value]) => `${label} ${value.toFixed(3)}`).join(" · ");
+        // Let the loading message paint before parsing a large structure.
+        requestAnimationFrame(() => setTimeout(() => {
+          if (version !== drawVersion) return;
+          try {
+            viewer.clear();
+            const model = viewer.addModel(candidate.structure, candidate.format);
+            if (!model.selectedAtoms({}).length) throw new Error("No atoms in this structure");
+            if (!model.selectedAtoms({chain: "A"}).length || !model.selectedAtoms({chain: "B"}).length) {
+              throw new Error("Expected target chain A and binder chain B");
+            }
+            viewer.setStyle({}, {cartoon: {color: "#a1aab6"}});
+            viewer.setStyle({chain: "B"}, {cartoon: {color: "#2563eb"}});
+            viewer.zoomTo();
+            viewer.render();
+            initialView = viewer.getView();
+            notice.hidden = true;
+          } catch (error) {
+            showError(`Could not display this design. ${error.message}. Try another candidate.`);
+          }
+        }, 0));
+      }
+      selector.addEventListener("change", draw);
+      document.getElementById("reset").addEventListener("click", () => {
+        if (viewer && initialView) { viewer.setView(initialView); viewer.render(); }
+      });
+      document.getElementById("save").addEventListener("click", () => {
+        const link = document.createElement("a");
+        let objectURL;
+        if (location.protocol === "http:" || location.protocol === "https:") {
+          link.href = "view.html";
+        } else {
+          const html = "<!doctype html>\n" + document.documentElement.outerHTML;
+          objectURL = URL.createObjectURL(new Blob([html], {type: "text/html;charset=utf-8"}));
+          link.href = objectURL;
+        }
+        link.download = "view.html";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        if (objectURL) setTimeout(() => URL.revokeObjectURL(objectURL), 1000);
+      });
+      window.addEventListener("resize", () => { if (viewer) viewer.resize(); });
+      draw();
+    })();
+  </script>
+</body>
+</html>

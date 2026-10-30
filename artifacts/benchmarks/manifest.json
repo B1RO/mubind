@@ -1,0 +1,153 @@
+{
+  "schema": 2,
+  "description": "Protein collections and scoring inputs for current evaluation workflows. Outputs belong in artifacts/evaluations.",
+  "files": {
+    "3di_matrix.txt": {
+      "sha256": "63cdc9b17de248c790e934ffb7739d067a59c7c6cdb73a2c9c99de63e662b557"
+    },
+    "ppiref/complexes/1bth_H_P.pdb": {
+      "sha256": "c902deae5a7ed82dba26c8257d0a70f97d3ec11f9ad4a2fcf2260f93445cd6b6"
+    },
+    "ppiref/complexes/1cgi_E_I.pdb": {
+      "sha256": "759a0ee09c792a4f07d844d28b296b7dedd556629255cb886b642fa93784b775"
+    },
+    "ppiref/complexes/1eai_A_C.pdb": {
+      "sha256": "71943fdebbd8ae9e204a099cf5db4799abec6dfc5e9ec6231592d416d588df73"
+    },
+    "ppiref/complexes/1kig_H_L.pdb": {
+      "sha256": "6089e0049e90cd42a081086ddfb4f7b10193d89349604c9118da4b5900c4199e"
+    },
+    "ppiref/complexes/1mee_A_I.pdb": {
+      "sha256": "fd13b2fa298ca20636a4870fed058301b48708a5a0748bc6539b003add8370dc"
+    },
+    "ppiref/complexes/1mhh_A_E.pdb": {
+      "sha256": "343cfade8cc870418918cbda11f88ff1218dfde3476313b10ec4abac478c7520"
+    },
+    "ppiref/complexes/1mox_B_D.pdb": {
+      "sha256": "06f481199470b5b649662f0f78c2df91b23568d5c7ab20ec2b47f674272880a4"
+    },
+    "ppiref/complexes/1ppf_E_I.pdb": {
+      "sha256": "a87df969da86229b634af6d7df7c3e724e083225e1081911dec3da02327cf317"
+    },
+    "ppiref/complexes/1rfn_A_B.pdb": {
+      "sha256": "0b190cf2e8280862009e536b720f6d5e18c9be5a15b6874f9dfda186cf383452"
+    },
+    "ppiref/complexes/1tgs_I_Z.pdb": {
+      "sha256": "b27d4054225b2f7148babc6063818b0f57e9f6b5f72feac060716dd643dac7e8"
+    },
+    "ppiref/complexes/1ymh_A_E.pdb": {
+      "sha256": "fa7e1089e157c6ecc366a8b8ad34d37531dcd7c7190cdf49f1f8cf88a6215f19"
+    },
+    "ppiref/complexes/1z7k_A_B.pdb": {
+      "sha256": "5d01e07f58ccfe4c0276eab761c9cab3645c141c99aecc5754f19251555adfb4"
+    },
+    "ppiref/complexes/1zr0_A_B.pdb": {
+      "sha256": "cc37b1c83c70ca0cbc6f538b1fbf04cb5b680d9578c6e71d32acbe67e5e6e502"
+    },
+    "ppiref/complexes/1zud_3_4.pdb": {
+      "sha256": "58797def0dc37eedbafb10039f6db4c35079e3eba2b0800e24dea6cab66b6851"
+    },
+    "ppiref/complexes/2f4m_A_B.pdb": {
+      "sha256": "eb98a89079f4411afc75ca8d151095c16921267f2fc0357e2937238a5cc4d5b5"
+    },
+    "ppiref/complexes/2fi3_E_I.pdb": {
+      "sha256": "b8db304974ca082252da7bdd8c79a682e53377dd1febf2ca16f5c6f73f6feb96"
+    },
+    "ppiref/complexes/2gox_A_B.pdb": {
+      "sha256": "71b7fffc67881c01b2e5c77335aabe98e4f96503db8a9fb8d1b9204e20cc578a"
+    },
+    "ppiref/complexes/2gw4_C_D.pdb": {
+      "sha256": "2160a758f3cd05d3cee8bb5782a95bc821abc6a807bea605a8b3ecfed941ca09"
+    },
+    "ppiref/complexes/2iyb_A_E.pdb": {
+      "sha256": "199883203aedb7b94002dfc5542e07a6f1f3c1ba0410acdd450e82c644a3fa1d"
+    },
+    "ppiref/complexes/2nu4_E_I.pdb": {
+      "sha256": "7173a37a4c8f5f8650fb5607dd17c31f1b10415b81c504e6c3be5d2bd2e08965"
+    },
+    "ppiref/complexes/2ra3_B_I.pdb": {
+      "sha256": "0126a2c6c8beb93c45dd5c4540102d866b07bd91f424631e1faed91e8e46bb79"
+    },
+    "ppiref/complexes/2z7f_E_I.pdb": {
+      "sha256": "04ce0b6508afa252d2b21d86d5b4b615cc91b01ad5abd02daa3ba7633c8a4f40"
+    },
+    "ppiref/complexes/3d65_E_I.pdb": {
+      "sha256": "f1933e5e9bc4507640a0316bf0d1187433f91160259e1fd7dd9153521a83a021"
+    },
+    "ppiref/complexes/3fju_A_B.pdb": {
+      "sha256": "e4e53cac31b81b1079391f59b1b8b64082441eabe6e80806903b9e6320861cb3"
+    },
+    "ppiref/complexes/3l33_A_E.pdb": {
+      "sha256": "2d7306c2f56b9ff6e14614d4645b8af28c69d77ef267110e8dbd13587cc443d8"
+    },
+    "ppiref/complexes/3m7q_A_B.pdb": {
+      "sha256": "749a349c91fe2f459f70bb17e2191e48d98b12e954d9af53bd4a8ec2718591f7"
+    },
+    "ppiref/complexes/3ul4_A_B.pdb": {
+      "sha256": "a24baec6ae0197b419ec54264aaa25f55cd3f261052ba952ead27393fff2aad2"
+    },
+    "ppiref/complexes/3uou_A_B.pdb": {
+      "sha256": "4ecdca287dbdb9d908acafee5e70da4bc9f66f6b0e06f3190b92b218bd314b7f"
+    },
+    "ppiref/complexes/3wwn_A_B.pdb": {
+      "sha256": "22c2a6a63d5b1fc0404409da02c2a7a02589d653f1e0a9ada27f8d5300ca8396"
+    },
+    "ppiref/complexes/4b1t_A_B.pdb": {
+      "sha256": "0d1e41d38580c39f4b6833090095b20fc8adeee565ea12344cc9fc49d1e30f7b"
+    },
+    "ppiref/complexes/4ioi_A_E.pdb": {
+      "sha256": "47bae874167be76bb2fcf27dfbf6dcb09b6fb494eaab810764419a252d90bfd8"
+    },
+    "ppiref/complexes/4ioi_B_H.pdb": {
+      "sha256": "506e54970a3dc06932c9e10150f9900f5440f6c2bb533250c9d31c18a3f59275"
+    },
+    "ppiref/complexes/4isl_A_B.pdb": {
+      "sha256": "60f488129cefa1ae7a3c7e8ebfb5b9b1288981dadd21511f759b3a7a0107021b"
+    },
+    "ppiref/complexes/4iso_A_B.pdb": {
+      "sha256": "98c9df8a376d2ff1fc02dd743917fd30187669efb2c0cf608fe3f4c9e47c940b"
+    },
+    "ppiref/complexes/4sgb_E_I.pdb": {
+      "sha256": "cde2dc1a102eb1cd2407710586ebe2098e579545c59fa02f9007af66bb9a776d"
+    },
+    "ppiref/complexes/4x33_A_B.pdb": {
+      "sha256": "045951653bab93fe3821d82132c750c45bba7c208893894e84e831c21adeb979"
+    },
+    "ppiref/complexes/5x42_A_B.pdb": {
+      "sha256": "ad185479f18309533c03e15bd1650ccbf0f6d7e9aa08290107b41360c655ff6f"
+    },
+    "ppiref/complexes/6fhp_A_C.pdb": {
+      "sha256": "c89cc40b26924c570a524438677967f24450766722541aa3a18b758be5f04876"
+    },
+    "ppiref/complexes/6g26_B_E.pdb": {
+      "sha256": "3647409bb8e6d7bd7d8aa54685cfe1a6a45104c1f854c023809efcc37207e32c"
+    },
+    "ppiref/complexes/6m9y_C_D.pdb": {
+      "sha256": "2052abf28c54a3038fde8ff47afba1d3cc98138f8ccd6850f61bb849aa777756"
+    },
+    "ppiref/complexes/6zxw_G_H.pdb": {
+      "sha256": "6080fc23a56528d2d248b6ac047e7d491b804f58e5891c2717ba3e771e0fc837"
+    },
+    "ppiref/complexes/7ae5_B_b.pdb": {
+      "sha256": "5b9bda9e718f4834ebbb07df88647999f5e04cdcf0bdf3bbf3cb4f99af7e5a8d"
+    },
+    "ppiref/complexes/7al8_B_C.pdb": {
+      "sha256": "f2df4dd4f773038597f82c56d878c42410a904626ba804c0811ad38c5ab2ed6d"
+    },
+    "ppiref/complexes/7qe8_A_D.pdb": {
+      "sha256": "0a2c15813c5eafc9a09f7d42f0787b5e6a59d0c29808e2a1ef12e68c25463800"
+    },
+    "ppiref/complexes/7zah_H_X.pdb": {
+      "sha256": "7c73b47af75cd2982fee302dedad62d4686cc6aef7bdd8afea3a57f8365fcf78"
+    },
+    "ppiref/complexes/manifest.json": {
+      "sha256": "2d2496c3dd103744aa21467eeb7896dd704a1a186adb6754269ee8a0062766f0"
+    },
+    "ppiref/sequences.json": {
+      "sha256": "43d4f896fb7d53fc82a9bc4418ee7a67cf097676bf0d8d47736ac33e8dd4c650"
+    },
+    "prostt5.json": {
+      "sha256": "46ea6402ab901e3abfc43c5b62ae04cbf1ce2c92a1ff01171c53758fd1f8ad56"
+    }
+  }
+}

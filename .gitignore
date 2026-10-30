@@ -1,0 +1,24 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+.venv-paper/
+*.egg-info/
+build/
+dist/
+/artifacts/*
+!/artifacts/__init__.py
+!/artifacts/benchmarks/
+!/artifacts/validation/
+!/artifacts/examples/
+# Legacy paths may remain while an older job finishes.
+checkpoints/
+generations/
+evaluations/
+targets/*
+!targets/.gitkeep
+
+# Local document comments and pending review history
+*.notes.json
+*.platno-review.json

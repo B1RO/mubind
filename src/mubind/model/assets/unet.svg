@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="802" viewBox="0 0 880 802" role="img" aria-labelledby="title desc">
+<title id="title">ProteinDiffusionUNet tensor flow</title>
+<desc id="desc">Source files, tensor shapes, conditioning and skip connections in the training configuration</desc>
+<defs><marker id="arrow" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 .6 L8 4 L0 7.4 z" fill="#8f8d85"/></marker></defs>
+<style>text { font-family: 'Segoe UI', -apple-system, Helvetica, Arial, 'DejaVu Sans', sans-serif; fill: #2b3440; } .mono { font-family: ui-monospace, 'Cascadia Mono', Consolas, Menlo, 'DejaVu Sans Mono', monospace; } .muted { fill: #68727f; }</style>
+<path d="M8 15 Q8 8 15 8 H85.5 Q92.5 8 92.5 15 V38 H865 Q872 38 872 45 V139 Q872 146 865 146 H15 Q8 146 8 139 Z" fill="#f6f5f1" stroke="#dcdad1" stroke-width="1.2"/>
+<text x="21" y="29" text-anchor="start"><tspan class="mono" font-size="13.5" fill="#2b3440" font-weight="700">unet.py</tspan></text>
+<rect x="116.0" y="54.0" width="168.0" height="6" rx="1.5" fill="#e9ebee" stroke="#98a1ab" stroke-width="1"/>
+<path d="M140.0 54.0V60.0M164.0 54.0V60.0M188.0 54.0V60.0M212.0 54.0V60.0M236.0 54.0V60.0M260.0 54.0V60.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="106.0" y="61.5" text-anchor="end"><tspan class="mono muted" font-size="13">[B, 8, 70]</tspan></text>
+<text x="294.0" y="61.5" text-anchor="start"><tspan class="mono" font-size="14" fill="#2b3440" font-weight="700">noisy_x</tspan></text>
+<polyline points="200,64.0 200,107" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="214" y="84" text-anchor="start"><tspan class="muted" font-size="13">+ self_cond_x · kept seed · edit</tspan></text>
+<text x="214" y="102" text-anchor="start"><tspan class="muted" font-size="13">+ </tspan><tspan class="mono" font-size="13" fill="#94700f">threedi</tspan><tspan class="muted" font-size="13"> → input (k7)</tspan></text>
+<rect x="116.0" y="112.0" width="168.0" height="16.0" rx="1.5" fill="#dfe2e6" stroke="#98a1ab" stroke-width="1"/>
+<path d="M140.0 112.0V128.0M164.0 112.0V128.0M188.0 112.0V128.0M212.0 112.0V128.0M236.0 112.0V128.0M260.0 112.0V128.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="106.0" y="124.5" text-anchor="end"><tspan class="mono muted" font-size="13">[B, 32, 70]</tspan></text>
+<rect x="596.0" y="54.0" width="168.0" height="6" rx="1.5" fill="#e9ebee" stroke="#98a1ab" stroke-width="1"/>
+<path d="M620.0 54.0V60.0M644.0 54.0V60.0M668.0 54.0V60.0M692.0 54.0V60.0M716.0 54.0V60.0M740.0 54.0V60.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="774.0" y="61.5" text-anchor="start"><tspan class="mono muted" font-size="13">[B, 8, 70]</tspan></text>
+<text x="586.0" y="61.5" text-anchor="end"><tspan class="mono" font-size="14" fill="#2b3440" font-weight="700">prediction</tspan></text>
+<text x="666" y="88" text-anchor="end"><tspan class="muted" font-size="13">output · 1×1</tspan></text>
+<text x="666" y="108" text-anchor="end"><tspan class="muted" font-size="13">3Di cross-attention · </tspan><tspan class="mono" font-size="13" fill="#94700f">threedi</tspan></text>
+<text x="666" y="128" text-anchor="end"><tspan class="muted" font-size="13">final_res_block · τ</tspan></text>
+<path d="M8 193 Q8 186 15 186 H136.5 Q143.5 186 143.5 193 V216 H321 Q328 216 328 223 V501 Q328 508 321 508 H15 Q8 508 8 501 Z" fill="#f6f5f1" stroke="#dcdad1" stroke-width="1.2"/>
+<text x="21" y="207" text-anchor="start"><tspan class="mono" font-size="13.5" fill="#2b3440" font-weight="700">down_block.py</tspan></text>
+<path d="M552 193 Q552 186 559 186 H663.5 Q670.5 186 670.5 193 V216 H865 Q872 216 872 223 V501 Q872 508 865 508 H559 Q552 508 552 501 Z" fill="#f6f5f1" stroke="#dcdad1" stroke-width="1.2"/>
+<text x="565" y="207" text-anchor="start"><tspan class="mono" font-size="13.5" fill="#2b3440" font-weight="700">up_block.py</tspan></text>
+<text x="26" y="238" text-anchor="start"><tspan font-size="14" fill="#2b3440" font-weight="600">DownBlock 0</tspan></text>
+<text x="310" y="238" text-anchor="end"><tspan class="mono" font-size="13" fill="#2b3440">maps[0]</tspan><tspan class="muted" font-size="13"> · τ</tspan></text>
+<text x="570" y="238" text-anchor="start"><tspan font-size="14" fill="#2b3440" font-weight="600">UpBlock 2</tspan></text>
+<text x="854" y="238" text-anchor="end"><tspan class="mono" font-size="13" fill="#2b3440">maps[0]</tspan><tspan class="muted" font-size="13"> · τ</tspan></text>
+<rect x="116.0" y="248.0" width="168.0" height="16.0" rx="1.5" fill="#dfe2e6" stroke="#98a1ab" stroke-width="1"/>
+<path d="M140.0 248.0V264.0M164.0 248.0V264.0M188.0 248.0V264.0M212.0 248.0V264.0M236.0 248.0V264.0M260.0 248.0V264.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="106.0" y="260.5" text-anchor="end"><tspan class="mono muted" font-size="13">[B, 32, 70]</tspan></text>
+<rect x="596.0" y="248.0" width="168.0" height="16.0" rx="1.5" fill="#dfe2e6" stroke="#98a1ab" stroke-width="1"/>
+<path d="M620.0 248.0V264.0M644.0 248.0V264.0M668.0 248.0V264.0M692.0 248.0V264.0M716.0 248.0V264.0M740.0 248.0V264.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="774.0" y="260.5" text-anchor="start"><tspan class="mono muted" font-size="13">[B, 32, 70]</tspan></text>
+<text x="26" y="322" text-anchor="start"><tspan font-size="14" fill="#2b3440" font-weight="600">DownBlock 1</tspan></text>
+<text x="310" y="322" text-anchor="end"><tspan class="mono" font-size="13" fill="#2b3440">maps[1]</tspan><tspan class="muted" font-size="13"> · τ</tspan></text>
+<text x="570" y="322" text-anchor="start"><tspan font-size="14" fill="#2b3440" font-weight="600">UpBlock 1</tspan></text>
+<text x="854" y="322" text-anchor="end"><tspan class="mono" font-size="13" fill="#2b3440">maps[1]</tspan><tspan class="muted" font-size="13"> · τ</tspan></text>
+<rect x="158.0" y="340.0" width="84.0" height="16.0" rx="1.5" fill="#dfe2e6" stroke="#98a1ab" stroke-width="1"/>
+<path d="M179.0 340.0V356.0M200.0 340.0V356.0M221.0 340.0V356.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="148.0" y="352.5" text-anchor="end"><tspan class="mono muted" font-size="13">[B, 32, 35]</tspan></text>
+<rect x="638.0" y="332.0" width="84.0" height="32.0" rx="1.5" fill="#cfd4da" stroke="#98a1ab" stroke-width="1"/>
+<path d="M659.0 332.0V364.0M680.0 332.0V364.0M701.0 332.0V364.0M638.0 348.0H722.0" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="732.0" y="352.5" text-anchor="start"><tspan class="mono muted" font-size="13">[B, 64, 35]</tspan></text>
+<text x="26" y="416" text-anchor="start"><tspan font-size="14" fill="#2b3440" font-weight="600">DownBlock 2</tspan></text>
+<text x="310" y="416" text-anchor="end"><tspan class="mono" font-size="13" fill="#2b3440">maps[2]</tspan><tspan class="muted" font-size="13"> · τ</tspan></text>
+<text x="570" y="416" text-anchor="start"><tspan font-size="14" fill="#2b3440" font-weight="600">UpBlock 0</tspan></text>
+<text x="854" y="416" text-anchor="end"><tspan class="mono" font-size="13" fill="#2b3440">maps[2]</tspan><tspan class="muted" font-size="13"> · τ</tspan></text>
+<rect x="179.6" y="442.0" width="40.8" height="32.0" rx="1.5" fill="#cfd4da" stroke="#98a1ab" stroke-width="1"/>
+<path d="M200.0 442.0V474.0M179.6 458.0H220.39999999999998" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="169.6" y="462.5" text-anchor="end"><tspan class="mono muted" font-size="13">[B, 64, 17]</tspan></text>
+<rect x="659.6" y="426.0" width="40.8" height="64.0" rx="1.5" fill="#bcc3cb" stroke="#98a1ab" stroke-width="1"/>
+<path d="M680.0 426.0V490.0M659.6 442.0H700.4M659.6 458.0H700.4M659.6 474.0H700.4" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="710.4" y="462.5" text-anchor="start"><tspan class="mono muted" font-size="13">[B, 128, 17]</tspan></text>
+<polyline points="200,132.0 200,243.0" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="680,244.0 680,65.0" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<circle cx="200" cy="170" r="3" fill="#8f8d85"/>
+<circle cx="680" cy="170" r="3" fill="#8f8d85"/>
+<polyline points="204,170 675,170" fill="none" stroke="#a3a096" stroke-dasharray="4 4" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="440" y="164" text-anchor="middle"><tspan class="mono muted" font-size="12.5">initial_features</tspan></text>
+<polyline points="290.0,256 590.0,256" fill="none" stroke="#a3a096" stroke-dasharray="4 4" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="248.0,348 632.0,348" fill="none" stroke="#a3a096" stroke-dasharray="4 4" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="226.39999999999998,458 653.6,458" fill="none" stroke="#a3a096" stroke-dasharray="4 4" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="440" y="250" text-anchor="middle"><tspan class="muted" font-size="12.5">2 skips</tspan></text>
+<polyline points="200,268.0 200,335.0" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="214" y="286.0" text-anchor="start"><tspan class="muted" font-size="13">70 → 35</tspan></text>
+<polyline points="200,360.0 200,437.0" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="214" y="378.0" text-anchor="start"><tspan class="muted" font-size="13">35 → 17</tspan></text>
+<polyline points="680,328.0 680,269.0" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="666" y="286.0" text-anchor="end"><tspan class="muted" font-size="13">35 → 70</tspan></text>
+<polyline points="680,422.0 680,369.0" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="666" y="386.0" text-anchor="end"><tspan class="muted" font-size="13">17 → 35</tspan></text>
+<text x="214" y="496.0" text-anchor="start"><tspan class="muted" font-size="13">conv 64 → 128</tspan></text>
+<path d="M295 531 Q295 524 302 524 H440.5 Q447.5 524 447.5 531 V554 H578 Q585 554 585 561 V679 Q585 686 578 686 H302 Q295 686 295 679 Z" fill="#f6f5f1" stroke="#dcdad1" stroke-width="1.2"/>
+<text x="308" y="545" text-anchor="start"><tspan class="mono" font-size="13.5" fill="#2b3440" font-weight="700">middle_block.py</tspan></text>
+<text x="313" y="576" text-anchor="start"><tspan font-size="14" fill="#2b3440" font-weight="600">MiddleBlock</tspan></text>
+<text x="567" y="576" text-anchor="end"><tspan class="mono" font-size="13" fill="#2b3440">maps[3]</tspan><tspan class="muted" font-size="13"> · τ</tspan><tspan class="muted" font-size="13"> · </tspan><tspan class="mono" font-size="13" fill="#94700f">threedi</tspan></text>
+<rect x="419.6" y="586.0" width="40.8" height="64.0" rx="1.5" fill="#bcc3cb" stroke="#98a1ab" stroke-width="1"/>
+<path d="M440.0 586.0V650.0M419.6 602.0H460.40000000000003M419.6 618.0H460.40000000000003M419.6 634.0H460.40000000000003" stroke="#ffffff" stroke-opacity=".6" stroke-width=".8" fill="none"/>
+<text x="440" y="670.0" text-anchor="middle"><tspan class="mono muted" font-size="13">[B, 128, 17]</tspan></text>
+<polyline points="200,478.0 200,618 414.6,618" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="464.40000000000003,618 680,618 680,495.0" fill="none" stroke="#8f8d85" stroke-width="1.3" marker-end="url(#arrow)"/>
+<path d="M8 709 Q8 702 15 702 H179.0 Q186.0 702 186.0 709 V732 H279 Q286 732 286 739 V787 Q286 794 279 794 H15 Q8 794 8 787 Z" fill="#f6f5f1" stroke="#dcdad1" stroke-width="1.2"/>
+<text x="21" y="723" text-anchor="start"><tspan class="mono" font-size="13.5" fill="#2b3440" font-weight="700">biochem_encoder.py</tspan></text>
+<path d="M301 709 Q301 702 308 702 H472.0 Q479.0 702 479.0 709 V732 H572 Q579 732 579 739 V787 Q579 794 572 794 H308 Q301 794 301 787 Z" fill="#f6f5f1" stroke="#dcdad1" stroke-width="1.2"/>
+<text x="314" y="723" text-anchor="start"><tspan class="mono" font-size="13.5" fill="#2b3440" font-weight="700">threedi_encoder.py</tspan></text>
+<path d="M594 709 Q594 702 601 702 H671.5 Q678.5 702 678.5 709 V732 H865 Q872 732 872 739 V787 Q872 794 865 794 H601 Q594 794 594 787 Z" fill="#f6f5f1" stroke="#dcdad1" stroke-width="1.2"/>
+<text x="607" y="723" text-anchor="start"><tspan class="mono" font-size="13.5" fill="#2b3440" font-weight="700">unet.py</tspan></text>
+<text x="26" y="758" text-anchor="start"><tspan class="muted" font-size="13.5">properties → </tspan><tspan font-size="13.5" fill="#3f6ea6" font-weight="600">biochem maps</tspan></text>
+<text x="319" y="758" text-anchor="start"><tspan class="muted" font-size="13.5">3Di → </tspan><tspan class="mono" font-size="13.5" fill="#94700f" font-weight="700">threedi</tspan></text>
+<text x="319" y="779" text-anchor="start"><tspan class="muted" font-size="13.5">3Di → </tspan><tspan font-size="13.5" fill="#94700f" font-weight="600">3Di maps</tspan></text>
+<text x="612" y="758" text-anchor="start"><tspan class="mono" font-size="13.5" fill="#2b3440">maps[i]</tspan><tspan class="muted" font-size="13.5"> = [biochem, α · 3Di]</tspan></text>
+<text x="612" y="779" text-anchor="start"><tspan font-size="13.5" fill="#2b3440">τ</tspan><tspan class="muted" font-size="13.5"> = time_mlp(t)</tspan></text>
+</svg>

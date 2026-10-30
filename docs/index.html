@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teaching machines to design protein minibinders</title>
+<meta name="description" content="We introduce μbind, a diffusion model that learns to generate protein binders given a description of its shape in an alphabet of structural letters.">
+<meta name="theme-color" content="#17110d">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+  :root {
+    --ground: #17110d;
+    --ground-2: #221913;
+    --ink: #f6ece0;
+    --ink-dim: #c9b8a6;
+    --ink-faint: #8f7d6c;
+    --line: rgba(246, 236, 224, 0.16);
+    --gold: #f3b53f;
+    --orange: #f0752c;
+    --coral: #e4584d;
+    --rose: #d24a86;
+    --display: "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+    --mono: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    color-scheme: dark;
+  }
+
+  html { height: 100%; box-sizing: border-box; }
+  body {
+    margin: 0;
+    height: 100%;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    min-height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding-block: 32px 28px;
+    padding-inline: clamp(16px, 5vw, 64px);
+  }
+  .hero canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    display: block;
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(180deg, rgba(23,17,13,0.25) 0%, rgba(23,17,13,0) 30%, rgba(23,17,13,0) 65%, rgba(23,17,13,0.6) 100%);
+    pointer-events: none;
+  }
+
+
+  .content {
+    max-width: 880px;
+    display: grid;
+    gap: clamp(14px, 3.1vh, 28px);
+  }
+
+  h1 {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(30px, min(8vw, 11.2vh), 100px);
+    line-height: 0.98;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    max-width: 12ch;
+  }
+  .subtitle {
+    margin: -10px 0 0;
+    max-width: 44ch;
+    font-size: clamp(17px, 1.6vw, 20px);
+    line-height: 1.5;
+    color: var(--ink-dim);
+    text-wrap: pretty;
+  }
+  .subtitle .tok {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    background: linear-gradient(90deg, #7fb0ea, #a8c6ea 38%, #f6d888 66%, #f3b53f);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  h1 em {
+    font-style: italic;
+  }
+
+  .credits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 44px;
+    padding-block: 18px 0;
+    border-top: 1px solid var(--line);
+  }
+  .credit { display: grid; gap: 3px; }
+  .credit .role {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .credit .who {
+    font-family: var(--display);
+    font-size: 26px;
+    line-height: 1.1;
+    color: var(--ink);
+  }
+
+  /* inline links inside one sentence: same face as the subtitle, a hairline that fills with the blue→yellow ramp on hover */
+  .links {
+    display: flex;
+    justify-self: start;
+    max-width: 100%;
+    flex-wrap: wrap;
+    gap: 10px 36px;
+    font-size: clamp(17px, 1.6vw, 20px);
+    line-height: 1.5;
+  }
+  .lnk {
+    color: var(--ink);
+    text-decoration: none;
+    padding-bottom: 2px;
+    background-image: linear-gradient(90deg, #7fb0ea, #f3b53f), linear-gradient(rgba(246,236,224,0.38), rgba(246,236,224,0.38));
+    background-repeat: no-repeat;
+    background-position: 0 100%, 0 100%;
+    background-size: 0% 2px, 100% 1px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    transition: background-size 320ms cubic-bezier(.2,.7,.2,1);
+  }
+  @media (max-width: 480px) { .links { gap: 10px 16px; font-size: 16px; } }
+  .lnk:hover, .lnk:focus-visible { background-size: 100% 2px, 100% 1px; }
+  .lnk:focus-visible { outline: none; }
+  .lnk[aria-disabled="true"] { cursor: not-allowed; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    transform: translate(-50%, 12px);
+    background: var(--ground-2);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 180ms ease;
+    max-width: calc(100vw - 32px);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 640px) {
+    .credit .who { font-size: 22px; }
+  }
+
+  /* phones and portrait screens: one column that fits the screen with no scrolling.
+     The text is sized by the screen height, sits at the bottom, and the painting fills the space above it.
+     Keep this query in sync with STACK in the script. */
+  @media (orientation: portrait) and (max-width: 1100px) {
+    .hero { padding-block: 16px 28px; }
+    .content { gap: clamp(12px, 2.4vh, 24px); }
+    h1 { font-size: clamp(30px, min(11vw, 5.6vh), 80px); max-width: none; }
+    .subtitle { margin-top: -4px; font-size: clamp(14px, min(4.3vw, 2.15vh), 19px); }
+    .credits { padding-top: clamp(10px, 1.8vh, 18px); }
+    .credit .who { font-size: clamp(18px, min(5.6vw, 2.9vh), 26px); }
+    .links { font-size: clamp(14px, min(4.3vw, 2.15vh), 19px); gap: 8px clamp(12px, 4vw, 28px); }
+  }
+
+  /* short landscape screens (phones on their side): smaller type, text kept to the left so the painting has the right */
+  @media (orientation: landscape) and (max-height: 540px) {
+    .hero { padding-block: 16px 32px; }
+    .content { max-width: min(880px, 60vw); gap: clamp(10px, 2.6vh, 20px); }
+    h1 { font-size: clamp(26px, 9.5vh, 64px); max-width: none; }
+    .subtitle { margin-top: -2px; font-size: clamp(13px, 3.6vh, 17px); }
+    .credits { padding-top: 10px; gap: 8px 28px; }
+    .credit .who { font-size: clamp(16px, 4.6vh, 22px); }
+    .links { font-size: clamp(13px, 3.6vh, 17px); gap: 8px 22px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lnk, .toast { transition: none; }
+  }
+</style>
+</head>
+<body>
+<header class="hero">
+  <canvas id="field" aria-hidden="true"></canvas>
+
+  <div class="content">
+    <h1>Teaching machines to <em>design</em> protein minibinders</h1>
+    <p class="subtitle">We introduce <span class="tok">μbind</span>, a diffusion model that learns to generate protein binders given a description of its shape in an alphabet of structural letters.</p>
+
+    <div class="credits">
+      <div class="credit">
+        <span class="role">Author</span>
+        <span class="who">Martin Biroščák</span>
+      </div>
+      <div class="credit">
+        <span class="role">Advisor</span>
+        <span class="who">Leon Hetzel</span>
+      </div>
+    </div>
+
+    <nav class="links" aria-label="Project links">
+      <a class="lnk" href="minibinder-presentation-audience.pdf" id="slides-link">Presentation</a>
+      <a class="lnk" href="https://huggingface.co/spaces/b1ro/mubind" id="demo-link">Hugging Face</a>
+      <a class="lnk" href="https://github.com/B1RO/mubind" id="code-link">Code</a>
+    </nav>
+
+  </div>
+</header>
+
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('field');
+  const ctx = canvas.getContext('2d');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // same query as the one-column CSS block
+  const STACK = window.matchMedia('(orientation: portrait) and (max-width: 1100px)');
+
+  let W = 0, H = 0, dpr = 1;
+  let art = null, noise = null, fade = null, raf = 0, sample = 1;
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+
+  // warm "rainbow" along the chain, N terminus gold, C terminus rose
+  // target in soft blue, binder in yellow, like a surface render of a complex
+  const WARM = [[160,198,242],[120,168,224],[92,140,206],[74,118,186]];
+  const PALE = [[255,222,130],[246,190,70],[234,162,46]];
+  let STOPS = WARM;
+  function chainColor(t, a) {
+    const p = Math.min(0.9999, Math.max(0, t)) * (STOPS.length - 1);
+    const i = Math.floor(p), f = p - i;
+    const c0 = STOPS[i], c1 = STOPS[i + 1];
+    const r = Math.round(c0[0] + (c1[0] - c0[0]) * f);
+    const g = Math.round(c0[1] + (c1[1] - c0[1]) * f);
+    const b = Math.round(c0[2] + (c1[2] - c0[2]) * f);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  }
+
+  function size() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const r = canvas.getBoundingClientRect();
+    W = Math.max(1, Math.round(r.width));
+    H = Math.max(1, Math.round(r.height));
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+  }
+
+  let rawNoise = null;
+  function makeNoise() {
+    let n = rawNoise;
+    if (!n || n.width !== Math.round(W * dpr / 2) || n.height !== Math.round(H * dpr / 2)) {
+      n = document.createElement('canvas');
+      n.width = Math.round(W * dpr / 2); n.height = Math.round(H * dpr / 2);
+      const c = n.getContext('2d');
+      const img = c.createImageData(n.width, n.height);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const v = Math.random();
+        // kept close to the ground colour so the noise phase barely lifts the page
+        d[i]     = 18 + v * 62;
+        d[i + 1] = 12 + v * 36;
+        d[i + 2] = 8 + v * 20;
+        d[i + 3] = 255;
+      }
+      c.putImageData(img, 0, 0);
+      rawNoise = n;
+    }
+    // full-size copy with the text side erased through the same feathered fade
+    const m = document.createElement('canvas');
+    m.width = canvas.width; m.height = canvas.height;
+    const mc = m.getContext('2d');
+    mc.drawImage(n, 0, 0, m.width, m.height);
+    if (fade) {
+      mc.scale(dpr, dpr);
+      mc.filter = 'blur(' + fade.feather.toFixed(0) + 'px)';
+      mc.globalCompositeOperation = 'destination-out';
+      mc.globalAlpha = 0.92;
+      mc.fill(fade.path);
+    }
+    return m;
+  }
+
+  // Catmull-Rom sampling of a control polygon into a dense, smooth polyline
+  function smooth(pts, per) {
+    const out = [];
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+      for (let k = 0; k < per; k++) {
+        const t = k / per, t2 = t * t, t3 = t2 * t;
+        out.push({
+          x: 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3),
+          y: 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3)
+        });
+      }
+    }
+    out.push(pts[pts.length - 1]);
+    return out;
+  }
+
+  // --- secondary structure, drawn the way a cartoon renderer does it ---
+
+  // α-helix: a spiral ribbon around a straight axis; the back of each turn is thin and dim, the front wide and bright
+  function drawHelix(c, e, t0, t1, s, depth) {
+    const dx = e.x1 - e.x0, dy = e.y1 - e.y0, L = Math.hypot(dx, dy) || 1;
+    const ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
+    const bright = 0.5 + 0.5 * depth, wf = 0.85 + 0.15 * depth;
+    const r = 8.5 * s * wf, pitch = 12.5 * s;
+    c.lineCap = 'round';
+    // faint solid core so the helix reads as one body
+    c.strokeStyle = chainColor((t0 + t1) / 2, 0.14 * bright);
+    c.lineWidth = 2 * r + 2;
+    c.beginPath(); c.moveTo(e.x0, e.y0); c.lineTo(e.x1, e.y1); c.stroke();
+    for (let pass = 0; pass < 2; pass++) {
+      let prev = null;
+      for (let u = 0; u <= L; u += 1.5) {
+        const phi = (u / pitch) * Math.PI * 2, facing = Math.cos(phi);
+        const px = e.x0 + ux * u + nx * r * Math.sin(phi), py = e.y0 + uy * u + ny * r * Math.sin(phi);
+        const front = facing >= 0;
+        if (prev && ((pass === 0 && !front) || (pass === 1 && front))) {
+          const t = t0 + (t1 - t0) * (u / L);
+          if (pass === 1) {
+            // dark rim under the front ribbon gives it an edge
+            c.strokeStyle = 'rgba(23,17,13,' + (0.55 * bright) + ')';
+            c.lineWidth = (3.2 + 4.2 * facing) * s * wf + 2.2;
+            c.beginPath(); c.moveTo(prev.x, prev.y); c.lineTo(px, py); c.stroke();
+          }
+          c.strokeStyle = chainColor(t, (pass === 1 ? 0.95 : 0.4) * bright);
+          c.lineWidth = (pass === 1 ? 3.2 + 4.2 * facing : 2.2) * s * wf;
+          c.beginPath(); c.moveTo(prev.x, prev.y); c.lineTo(px, py); c.stroke();
+        }
+        prev = { x: px, y: py };
+      }
+    }
+  }
+
+  // β-strand: a flat ribbon that twists along its length, tapered at both ends
+  function drawStrand(c, e, t0, t1, s, depth) {
+    const dx = e.x1 - e.x0, dy = e.y1 - e.y0, L = Math.hypot(dx, dy) || 1;
+    const ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
+    const bright = 0.5 + 0.5 * depth, wf = 0.85 + 0.15 * depth;
+    const wmax = 4.6 * s * wf, ph = rand(0, Math.PI), twist = rand(0.6, 1.4);
+    const left = [], right = [];
+    for (let u = 0; u <= L; u += 2) {
+      const taper = Math.min(1, u / (10 * s), (L - u) / (10 * s));
+      const w = wmax * (0.3 + 0.7 * Math.abs(Math.cos((u / L) * Math.PI * twist + ph))) * Math.max(0.15, taper);
+      left.push({ x: e.x0 + ux * u + nx * w, y: e.y0 + uy * u + ny * w });
+      right.push({ x: e.x0 + ux * u - nx * w, y: e.y0 + uy * u - ny * w });
+    }
+    const g = c.createLinearGradient(e.x0, e.y0, e.x1, e.y1);
+    g.addColorStop(0, chainColor(t0, 0.92 * bright));
+    g.addColorStop(1, chainColor(t1, 0.92 * bright));
+    c.beginPath();
+    c.moveTo(left[0].x, left[0].y);
+    for (const p of left) c.lineTo(p.x, p.y);
+    for (let i = right.length - 1; i >= 0; i--) c.lineTo(right[i].x, right[i].y);
+    c.closePath();
+    c.fillStyle = g; c.fill();
+    c.strokeStyle = 'rgba(23,17,13,' + (0.5 * bright) + ')';
+    c.lineWidth = 1; c.stroke();
+  }
+
+  // loop: a thin smooth tube
+  function drawLoop(c, pts, t0, t1, s, depth) {
+    const bright = 0.5 + 0.5 * depth, wf = 0.85 + 0.15 * depth;
+    const N = pts.length - 1;
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    for (let i = 0; i < N; i++) {
+      c.strokeStyle = chainColor(t0 + (t1 - t0) * (i / N), 0.8 * bright);
+      c.lineWidth = 2.3 * s * wf;
+      c.beginPath(); c.moveTo(pts[i].x, pts[i].y); c.lineTo(pts[i + 1].x, pts[i + 1].y); c.stroke();
+    }
+  }
+
+  // lay out a fold: straight helices and strands packed inside a globule, joined by loops that bulge outward
+  // opt (all optional): alphaOnly, n (element count), len (helix length scale), perp (chance of a crossing helix), theta (main axis)
+  // returns points sampled along the helices and strands, so a partner can be docked against the real surface
+  function drawProtein(c, cx, cy, radius, s, opt) {
+    opt = opt || {};
+    const els = [];
+    const alphaOnly = opt.alphaOnly || Math.random() < 0.35;
+    const n = opt.n || Math.round(rand(5, 9));
+    const theta0 = opt.theta != null ? opt.theta : rand(0, Math.PI);
+    const perp = opt.perp != null ? opt.perp : 0.3;
+    const lenK = opt.len || 1;
+    const spread = opt.spread || 0.42;
+    const angJit = opt.angJit != null ? opt.angJit : 0.4;
+    // an optional pocket: a round notch kept free of elements and lined by tangent ones, so a partner can sit in it
+    const pk = opt.pocket ? { x: opt.pocket.x, y: opt.pocket.y, r: opt.pocket.r, face: opt.pocket.face } : null;
+
+    function mid(e) { return { x: (e.x0 + e.x1) / 2, y: (e.y0 + e.y1) / 2 }; }
+    function inPocket(e) {
+      if (!pk) return false;
+      const L = Math.hypot(e.x1 - e.x0, e.y1 - e.y0) || 1;
+      for (let u = 0; u <= L; u += 8) {
+        const px = e.x0 + (e.x1 - e.x0) * u / L, py = e.y0 + (e.y1 - e.y0) * u / L;
+        if (Math.hypot(px - pk.x, py - pk.y) < pk.r + 10 * s) return true;
+      }
+      return false;
+    }
+    function fits(e, spacing) {
+      if (inPocket(e)) return false;
+      const m = mid(e);
+      if (Math.hypot(m.x - cx, m.y - cy) > radius * 0.85) return false;
+      for (const o of els) {
+        const om = mid(o);
+        const need = (e.type === 'helix' || o.type === 'helix') ? 30 * s : spacing;
+        if (Math.hypot(m.x - om.x, m.y - om.y) < need) return false;
+      }
+      return true;
+    }
+    function segment(type, ex, ey, ang, len, dir) {
+      return { type: type, x0: ex - Math.cos(ang) * len / 2 * dir, y0: ey - Math.sin(ang) * len / 2 * dir,
+               x1: ex + Math.cos(ang) * len / 2 * dir, y1: ey + Math.sin(ang) * len / 2 * dir, z: rand(-1, 1) };
+    }
+
+    // packed mode: each new element is laid alongside one already placed, so the fold grows as a dense globule
+    function nextTo(o, extra) {
+      const oa = Math.atan2(o.y1 - o.y0, o.x1 - o.x0), m = mid(o);
+      const side = Math.random() < 0.5 ? 1 : -1, d = (rand(30, 36) + extra) * s;
+      const along = gauss() * 18 * s;
+      return { x: m.x - Math.sin(oa) * d * side + Math.cos(oa) * along,
+               y: m.y + Math.cos(oa) * d * side + Math.sin(oa) * along,
+               ang: oa + gauss() * 0.22 + (Math.random() < perp ? Math.PI / 2 : 0) };
+    }
+
+    if (pk) {
+      // the wall of the pocket: elements lying tangent to it, on the side facing into the protein
+      const m = 5, span = 2.5, rr = pk.r + 12 * s;
+      for (let k = 0; k < m; k++) {
+        const phi = pk.face + Math.PI + (k - (m - 1) / 2) * (span / (m - 1));
+        const strand = !alphaOnly && k > 0 && k < m - 1 && Math.random() < 0.35;
+        const e = segment(strand ? 'strand' : 'helix', pk.x + Math.cos(phi) * rr, pk.y + Math.sin(phi) * rr,
+                          phi + Math.PI / 2 + gauss() * 0.05, rr * (span / (m - 1)) * rand(0.95, 1.1), 1);
+        e.z = rand(-0.2, 1);
+        els.push(e);
+      }
+    }
+
+    let tries = 0;
+    while (els.length < n && tries++ < (opt.pack ? 1500 : 500)) {
+      const isHelix = alphaOnly || Math.random() < 0.5;
+      const anchor = opt.pack && els.length ? els[Math.floor(Math.random() * els.length)] : null;
+      let ang = theta0 + gauss() * angJit + (Math.random() < perp ? Math.PI / 2 : 0);
+      if (!isHelix) {
+        // a sheet: 2–4 antiparallel strands side by side
+        const k = Math.round(rand(2, 4));
+        const len = rand(55, 105) * s * lenK;
+        let sx = cx + gauss() * radius * 0.4, sy = cy + gauss() * radius * 0.4;
+        if (anchor) { const p = nextTo(anchor, (k - 1) * 7.5); sx = p.x; sy = p.y; ang = p.ang; }
+        else if (opt.pack) { sx = cx + gauss() * radius * spread; sy = cy + gauss() * radius * spread; }
+        const nx = -Math.sin(ang), ny = Math.cos(ang);
+        const group = [];
+        for (let j = 0; j < k; j++) {
+          const off = (j - (k - 1) / 2) * 15 * s;
+          group.push(segment('strand', sx + nx * off, sy + ny * off, ang + gauss() * 0.06, len * rand(0.8, 1.15), j % 2 ? -1 : 1));
+        }
+        const zs = rand(-1, 1);
+        if (group.every(function (g) { return fits(g, 13 * s); })) group.forEach(function (g) { g.z = zs + gauss() * 0.1; els.push(g); });
+        continue;
+      }
+      let hx = cx + gauss() * radius * spread, hy = cy + gauss() * radius * spread;
+      if (anchor) { const p = nextTo(anchor, 0); hx = p.x; hy = p.y; ang = p.ang; }
+      const e = segment('helix', hx, hy, ang, rand(70, 170) * s * lenK, Math.random() < 0.5 ? 1 : -1);
+      if (fits(e, 30 * s)) els.push(e);
+    }
+    if (!els.length) return [];
+    if (opt.pack) {
+      // a packed fold grows from a random seed and can drift; slide it back so its centroid sits on (cx, cy)
+      let mx = 0, my = 0;
+      for (const e of els) { const m = mid(e); mx += m.x; my += m.y; }
+      mx = cx - mx / els.length; my = cy - my / els.length;
+      for (const e of els) { e.x0 += mx; e.x1 += mx; e.y0 += my; e.y1 += my; }
+      if (pk) { pk.x += mx; pk.y += my; }
+    }
+
+    // chain order: greedy nearest end, flipping elements so the chain runs through them
+    const order = [];
+    let cur = els.splice(Math.floor(Math.random() * els.length), 1)[0];
+    order.push(cur);
+    while (els.length) {
+      let best = -1, bestD = Infinity, flip = false;
+      for (let i = 0; i < els.length; i++) {
+        const d0 = Math.hypot(els[i].x0 - cur.x1, els[i].y0 - cur.y1), d1 = Math.hypot(els[i].x1 - cur.x1, els[i].y1 - cur.y1);
+        if (d0 < bestD) { bestD = d0; best = i; flip = false; }
+        if (d1 < bestD) { bestD = d1; best = i; flip = true; }
+      }
+      cur = els.splice(best, 1)[0];
+      if (flip) { const tx = cur.x0, ty = cur.y0; cur.x0 = cur.x1; cur.y0 = cur.y1; cur.x1 = tx; cur.y1 = ty; }
+      order.push(cur);
+    }
+
+    // loops between elements, plus short tails at both termini
+    const parts = [];
+    function tail(x, y, ux, uy, z) {
+      const pts = [{ x: x, y: y }];
+      let px = x, py = y, ax = ux, ay = uy;
+      for (let i = 0; i < 2; i++) {
+        const a = Math.atan2(ay, ax) + gauss() * 0.8, l = rand(18, 40) * s;
+        px += Math.cos(a) * l; py += Math.sin(a) * l; ax = Math.cos(a); ay = Math.sin(a);
+        pts.push({ x: px, y: py });
+      }
+      return { type: 'loop', pts: pts, z: z };
+    }
+    const f = order[0], l = order[order.length - 1];
+    let d = Math.hypot(f.x1 - f.x0, f.y1 - f.y0) || 1;
+    parts.push({ part: tail(f.x0, f.y0, (f.x0 - f.x1) / d, (f.y0 - f.y1) / d, f.z), reverse: true });
+    for (let i = 0; i < order.length; i++) {
+      parts.push({ part: order[i] });
+      if (i < order.length - 1) {
+        const a = order[i], b = order[i + 1];
+        const mx = (a.x1 + b.x0) / 2, my = (a.y1 + b.y0) / 2;
+        let ox = mx - cx, oy = my - cy; const od = Math.hypot(ox, oy) || 1; ox /= od; oy /= od;
+        const bulge = (opt.pack ? rand(8, 22) : rand(14, 48)) * s;
+        const ctrl = { x: mx + ox * bulge + gauss() * 8 * s, y: my + oy * bulge + gauss() * 8 * s };
+        if (pk) {
+          const qx = ctrl.x - pk.x, qy = ctrl.y - pk.y, qd = Math.hypot(qx, qy) || 1, lim = pk.r + 18 * s;
+          if (qd < lim) { ctrl.x = pk.x + qx / qd * lim; ctrl.y = pk.y + qy / qd * lim; }
+        }
+        parts.push({ part: { type: 'loop', pts: smooth([{ x: a.x1, y: a.y1 }, ctrl, { x: b.x0, y: b.y0 }], 14), z: (a.z + b.z) / 2 } });
+      }
+    }
+    d = Math.hypot(l.x1 - l.x0, l.y1 - l.y0) || 1;
+    parts.push({ part: tail(l.x1, l.y1, (l.x1 - l.x0) / d, (l.y1 - l.y0) / d, l.z) });
+
+    // colour by position along the chain
+    let total = 0;
+    for (const p of parts) {
+      const q = p.part;
+      q.len = q.type === 'loop' ? q.pts.reduce(function (acc, pt, i) { return i ? acc + Math.hypot(pt.x - q.pts[i - 1].x, pt.y - q.pts[i - 1].y) : 0; }, 0)
+                                : Math.hypot(q.x1 - q.x0, q.y1 - q.y0);
+      q.t0 = total; total += q.len; q.t1 = total;
+    }
+    for (const p of parts) {
+      const q = p.part;
+      q.t0 /= total; q.t1 /= total;
+      if (p.reverse) { q.pts.reverse(); }
+    }
+
+    // draw back to front
+    const drawables = parts.map(function (p) { return p.part; }).sort(function (a, b) { return a.z - b.z; });
+    STOPS = opt.stops || WARM;
+    for (const q of drawables) {
+      const depth = (q.z + 1) / 2;
+      if (q.type === 'loop') drawLoop(c, q.pts, q.t0, q.t1, s, depth);
+      else if (q.type === 'helix') drawHelix(c, q, q.t0, q.t1, s, depth);
+      else drawStrand(c, q, q.t0, q.t1, s, depth);
+    }
+    STOPS = WARM;
+
+    const body = [];
+    for (const q of drawables) {
+      if (q.type === 'loop') continue;
+      const L = Math.hypot(q.x1 - q.x0, q.y1 - q.y0) || 1;
+      for (let u = 0; u <= L; u += 6) body.push({ x: q.x0 + (q.x1 - q.x0) * u / L, y: q.y0 + (q.y1 - q.y0) * u / L });
+    }
+    body.pocket = pk;
+    return body;
+  }
+
+  // the region the type occupies, measured from the real text so the cut never crosses it
+  function textExtent() {
+    const host = canvas.getBoundingClientRect();
+    let right = 0, top = Infinity;
+    const els = [];
+    const h1 = document.querySelector('h1');
+    if (h1) { const r = document.createRange(); r.selectNodeContents(h1); els.push(r.getBoundingClientRect()); }
+    document.querySelectorAll('.subtitle, .credit, .links').forEach(function (el) { els.push(el.getBoundingClientRect()); });
+    for (const r of els) { right = Math.max(right, r.right - host.left); top = Math.min(top, r.top - host.top); }
+    return { right: right, top: top };
+  }
+
+  // an uneven edge: two slow waves plus a fine jitter. Its parameters persist and only drift a little
+  // between folds, so the boundary never jumps.
+  let edgeState = null;
+  function cutEdge(length, min, room) {
+    const n = Math.floor(length / 3) + 1;
+    if (!edgeState || edgeState.jit.length !== n) {
+      const jit = []; let j = 0;
+      for (let i = 0; i < n; i++) { j = Math.max(-5, Math.min(5, j + gauss() * 1.2)); jit.push(j); }
+      edgeState = { A1: rand(28, 70), L1: rand(140, 300), P1: rand(0, 7), A2: rand(8, 24), L2: rand(40, 90), P2: rand(0, 7), off: rand(0, 1), jit: jit };
+    } else {
+      const e = edgeState;
+      e.P1 += rand(-0.18, 0.18); e.P2 += rand(-0.3, 0.3);
+      e.A1 = Math.max(28, Math.min(70, e.A1 * rand(0.94, 1.06)));
+      e.A2 = Math.max(8, Math.min(24, e.A2 * rand(0.92, 1.08)));
+      e.off = Math.max(0, Math.min(1, e.off + rand(-0.08, 0.08)));
+    }
+    const e = edgeState, pts = [];
+    let lo = Infinity;
+    for (let i = 0; i < n; i++) {
+      const u = i * 3;
+      const v = e.A1 * Math.sin(u / e.L1 + e.P1) + e.A2 * Math.sin(u / e.L2 + e.P2) + e.jit[i];
+      pts.push(v); if (v < lo) lo = v;
+    }
+    const shift = min - lo + 12 + e.off * Math.max(1, room - 12);
+    return pts.map(function (v) { return v + shift; });
+  }
+
+  function paint() {
+    const a = document.createElement('canvas');
+    a.width = canvas.width; a.height = canvas.height;
+    const c = a.getContext('2d');
+    c.scale(dpr, dpr);
+    c.fillStyle = '#17110d';
+    c.fillRect(0, 0, W, H);
+
+    const ext = textExtent();
+    // side by side only on wide, landscape screens with room on the right; otherwise the painting sits above the text
+    const vertical = !STACK.matches && (W - ext.right) > 260;
+    let s = Math.min(1.25, Math.max(0.8, W / 1200));
+
+    // where the painting lives: to the right of the cut, or above it
+    let main;
+    if (vertical) {
+      const x0 = ext.right + 60;
+      main = { x: (x0 + W) / 2 + gauss() * (W - x0) * 0.06, y: H * rand(0.42, 0.55), r: Math.min((W - x0) * 0.42, H * 0.36) };
+    } else {
+      const y1 = ext.top - 36;
+      main = { x: W * 0.5 + gauss() * W * 0.05, y: y1 * 0.5 + 6, r: Math.min(W * 0.36, y1 * 0.42) };
+      // scale the fold to the space above the text, so a tablet gets a proportionally larger one
+      s = Math.min(1.25, Math.max(0.8, main.r * 0.9 / 140));
+    }
+    const vg = c.createRadialGradient(main.x, main.y, 0, main.x, main.y, Math.max(W, H) * 0.6);
+    vg.addColorStop(0, 'rgba(120,70,30,0.35)');
+    vg.addColorStop(1, 'rgba(120,70,30,0)');
+    c.fillStyle = vg; c.fillRect(0, 0, W, H);
+
+    // proteins go on their own layer, composited once blurred (glow) and once sharp
+    const layer = document.createElement('canvas');
+    layer.width = canvas.width; layer.height = canvas.height;
+    const lc = layer.getContext('2d');
+    lc.scale(dpr, dpr);
+    // exactly two chains: a large target and a small helical binder docked against its surface
+    const bigR = main.r * 0.9, smallR = main.r * 0.78 * rand(0.3, 0.38);
+    // the side the binder sits on, never toward the text
+    const dir = vertical ? rand(-0.5, 0.5) * Math.PI : rand(-0.95, -0.05) * Math.PI;
+    const dx = Math.cos(dir), dy = Math.sin(dir);
+    // shift the target back a little so the pair stays centred where the single fold used to be
+    const bx = main.x - dx * smallR * 0.9, by = main.y - dy * smallR * 0.9;
+    // the target has a round notch on that side, lined by elements lying along its wall
+    const pr = 54 * s;
+    const target = drawProtein(lc, bx, by, bigR, s,
+      { pack: true, n: Math.round(rand(15, 21)), len: 0.8, spread: 0.15, perp: 0.18,
+        pocket: { x: bx + dx * bigR * 0.6, y: by + dy * bigR * 0.6, r: pr, face: dir } });
+    // the binder site is that notch: a tight bundle whose axis points into it, like a key in a lock.
+    // The binder itself lives on its own layer (renderBinder) so it can be redrawn while the target stays put.
+    const site = target.pocket || { x: bx + dx * bigR * 0.6, y: by + dy * bigR * 0.6 };
+    dock = { x: site.x + dx * pr * 0.1, y: site.y + dy * pr * 0.1, r: smallR, s: s * 0.8, theta: dir };
+    // the binder is drawn on a small canvas around the site, so redrawing it many times a second stays cheap
+    const R = smallR * 0.7 + 160 * s;
+    dock.box = { x: Math.floor(dock.x - R), y: Math.floor(dock.y - R), w: Math.ceil(2 * R), h: Math.ceil(2 * R) };
+    c.save();
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.filter = 'blur(' + (10 * dpr) + 'px)';
+    c.globalAlpha = 0.55;
+    c.drawImage(layer, 0, 0);
+    c.filter = 'none';
+    c.globalAlpha = 1;
+    c.drawImage(layer, 0, 0);
+    c.restore();
+
+    // the fade: plain ground over the text side, with a wide feathered, uneven edge so no border is visible
+    const feather = vertical ? Math.min(110, (W - ext.right) * 0.28) : Math.min(56, ext.top * 0.14);
+    const path = new Path2D();
+    if (vertical) {
+      const edge = cutEdge(H, ext.right + 24 + feather, Math.min(80, (W - ext.right) * 0.15));
+      path.moveTo(-400, -400);
+      edge.forEach(function (x, i) { path.lineTo(x, Math.min(H, i * 3)); });
+      path.lineTo(edge[edge.length - 1], H + 400); path.lineTo(-400, H + 400);
+    } else {
+      const edge = cutEdge(W, (H - ext.top) + 16 + feather, Math.min(36, ext.top * 0.08));
+      path.moveTo(-400, H + 400);
+      edge.forEach(function (d, i) { path.lineTo(Math.min(W, i * 3), H - d); });
+      path.lineTo(W + 400, H - edge[edge.length - 1]); path.lineTo(W + 400, H + 400);
+    }
+    path.closePath();
+    fade = { path: path, feather: feather };
+    c.save();
+    c.filter = 'blur(' + feather.toFixed(0) + 'px)';
+    c.fillStyle = '#17110d';
+    c.fill(path);
+    c.restore();
+    return a;
+  }
+
+  // one binder variant at the docking site: a fresh 3-helix bundle, nudged slightly in place,
+  // glow + sharp like the target, and cut by the same feathered fade
+  let dock = null, binder = null;
+  function renderBinder() {
+    const box = dock.box, pw = Math.round(box.w * dpr), ph = Math.round(box.h * dpr);
+    const layer = document.createElement('canvas');
+    layer.width = pw; layer.height = ph;
+    const lc = layer.getContext('2d');
+    lc.setTransform(dpr, 0, 0, dpr, -box.x * dpr, -box.y * dpr);
+    drawProtein(lc, dock.x + gauss() * 3 * dock.s, dock.y + gauss() * 3 * dock.s, dock.r, dock.s,
+      { alphaOnly: true, n: 3, len: rand(0.5, 0.65), perp: 0, spread: 0.22, angJit: 0.08, theta: dock.theta + gauss() * 0.1, stops: PALE });
+    const b = document.createElement('canvas');
+    b.width = pw; b.height = ph;
+    const bc = b.getContext('2d');
+    bc.filter = 'blur(' + (10 * dpr) + 'px)';
+    bc.globalAlpha = 0.55;
+    bc.drawImage(layer, 0, 0);
+    bc.filter = 'none';
+    bc.globalAlpha = 1;
+    bc.drawImage(layer, 0, 0);
+    if (fade) {
+      bc.setTransform(dpr, 0, 0, dpr, -box.x * dpr, -box.y * dpr);
+      bc.filter = 'blur(' + fade.feather.toFixed(0) + 'px)';
+      bc.globalCompositeOperation = 'destination-out';
+      bc.fill(fade.path);
+    }
+    // the same grain the whole fold dissolves into, kept only in a soft halo around this binder
+    const mk = document.createElement('canvas');
+    mk.width = pw; mk.height = ph;
+    const mc = mk.getContext('2d');
+    mc.filter = 'blur(' + (14 * dpr) + 'px)';
+    for (let i = 0; i < 4; i++) mc.drawImage(b, 0, 0);
+    const nz = document.createElement('canvas');
+    nz.width = pw; nz.height = ph;
+    const nc = nz.getContext('2d');
+    if (noise) nc.drawImage(noise, Math.round(box.x * dpr), Math.round(box.y * dpr), pw, ph, 0, 0, pw, ph);
+    nc.globalCompositeOperation = 'destination-in';
+    nc.drawImage(mk, 0, 0);
+    b.nz = nz;
+    return b;
+  }
+
+  function ease(t) { return t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t); }
+
+  // binders: optional list of { img, a, blur } binder variants to draw over the target (default: the current one, solid)
+  function frame(t, binders) {
+    const k = ease(t);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    ctx.filter = 'none';
+    ctx.fillStyle = '#17110d';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const blur = (1 - k) * 18 * dpr;
+    ctx.filter = blur > 0.4 ? 'blur(' + blur.toFixed(1) + 'px)' : 'none';
+    ctx.globalAlpha = k;
+    ctx.drawImage(art, 0, 0);
+    const list = binders || (binder ? [{ img: binder, a: 1, blur: 0 }] : []);
+    for (const v of list) {
+      if (!v.img || v.a <= 0.003) continue;
+      const eb = v.k == null ? 1 : v.k, bx0 = Math.round(dock.box.x * dpr), by0 = Math.round(dock.box.y * dpr);
+      const bb = blur + (v.blur || 0) * dpr + (1 - eb) * 18 * dpr;
+      ctx.filter = bb > 0.4 ? 'blur(' + bb.toFixed(1) + 'px)' : 'none';
+      ctx.globalAlpha = k * v.a * eb;
+      ctx.drawImage(v.img, bx0, by0);
+      if (v.img.nz && eb < 0.995) {
+        ctx.filter = 'none';
+        ctx.globalCompositeOperation = 'screen';
+        ctx.globalAlpha = k * v.a * 4 * eb * (1 - eb) * 0.9;   // grain peaks mid-dissolve and is gone at both ends, so the swap can't pop
+        ctx.drawImage(v.img.nz, bx0, by0);
+        ctx.globalCompositeOperation = 'source-over';
+      }
+    }
+
+    if (k < 0.995) {
+      ctx.filter = 'none';
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = (1 - k) * 0.42;
+      ctx.drawImage(noise, 0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    ctx.globalAlpha = 1;
+    ctx.filter = 'none';
+  }
+
+  let timer = 0;
+  // fold in → search binder variants in place → lock one in → hold → dissolve
+  // Each swap uses the same dissolve as the whole fold (blur + grain) all the way down, so the old binder is gone before the new one starts.
+  const HOLD = 2200, FOLD = 4800, UNFOLD = 2600, OUT = 800, IN = 1200, DIP = 0, ROUNDS = 4;
+
+  function search() {
+    clearTimeout(timer);
+    cancelAnimationFrame(raf);
+    if (reduce) return;
+    let cur = binder, round = 0, phase = 'out', t0 = performance.now();
+    (function loop(now) {
+      const p = Math.min(1, (now - t0) / (phase === 'out' ? OUT : IN));
+      const kb = phase === 'out' ? 1 - (1 - DIP) * ease(p) : DIP + (1 - DIP) * ease(p);
+      frame(1, [{ img: cur, a: 1, blur: 0, k: kb }]);
+      if (p >= 1) {
+        if (phase === 'out') { cur = renderBinder(); phase = 'in'; }
+        else if (++round >= ROUNDS) { binder = cur; frame(1); schedule(); return; }
+        else phase = 'out';
+        t0 = now;
+      }
+      raf = requestAnimationFrame(loop);
+    })(t0);
+  }
+
+  function animate(from, to, dur, done) {
+    cancelAnimationFrame(raf);
+    const t0 = performance.now();
+    (function loop(now) {
+      const p = Math.min(1, (now - t0) / dur);
+      frame(from + (to - from) * p);
+      if (p < 1) raf = requestAnimationFrame(loop); else if (done) done();
+    })(t0);
+  }
+
+  function schedule() {
+    clearTimeout(timer);
+    if (reduce) return;
+    timer = setTimeout(function () {
+      if (document.hidden) { schedule(); return; }
+      // dissolve the current fold back into noise, then fold a fresh chain
+      animate(1, 0, UNFOLD, function () { sample += 1; build(); });
+    }, HOLD);
+  }
+
+  function build() {
+    clearTimeout(timer);
+    size();
+    art = paint();
+    noise = makeNoise();
+    binder = renderBinder();
+    if (reduce) { frame(1); return; }
+    animate(0, 1, FOLD, search);
+  }
+
+  let resizeTimer = 0;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      // phones fire resize when their toolbars slide in and out; only repaint if the page actually changed size
+      const r = canvas.getBoundingClientRect();
+      if (Math.round(r.width) === W && Math.round(r.height) === H) return;
+      size(); art = paint(); noise = makeNoise(); binder = renderBinder(); frame(1);
+    }, 180);
+  });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) schedule(); });
+
+
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(build); } else { build(); }
+
+  const toast = document.getElementById('toast');
+  let toastTimer = 0;
+  document.querySelectorAll('[data-soon]').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      e.preventDefault();
+      toast.textContent = el.getAttribute('data-soon');
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 2400);
+    });
+  });
+})();
+</script>
+</body>
+</html>

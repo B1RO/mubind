@@ -1,0 +1,70 @@
+{
+  "max_length": 70,
+  "split_rows": {
+    "train": 1505527,
+    "valid": 100,
+    "test": 92
+  },
+  "rows": [
+    {
+      "dataset_index": 63,
+      "source_row": 63,
+      "sequence_sha256": "456bfc4b46fa5c37e9e372a734eb10a17faf4978bd992974d7ec1041ed31335f",
+      "threedi_sha256": "61befbc46e16141a4e85d858f06f8ff077f3f9469406f2e4eca8c1461f3be302"
+    },
+    {
+      "dataset_index": 66,
+      "source_row": 66,
+      "sequence_sha256": "7ed9b6a17131ca920a8ec42cc40ba99f7f70a656a966469167a2079bfbda129d",
+      "threedi_sha256": "7124e0f06cdfd14ba3a427ec58e21913e13e0eba216f18bf4796387cfa958ea5"
+    },
+    {
+      "dataset_index": 51,
+      "source_row": 51,
+      "sequence_sha256": "254ecf4ac3377c9d78b53d2216281200eccad23b7a3988086ca71af8bc3d29e6",
+      "threedi_sha256": "ac561af548e9b8f35996fe3792b5ceeca6045360cf38cc53220c9ec75113997d"
+    },
+    {
+      "dataset_index": 57,
+      "source_row": 57,
+      "sequence_sha256": "4b68c17c8eef90b6195b0281023b0787a0491be5db7e41ff556e70993764a4a2",
+      "threedi_sha256": "69c4a6e2abe6f9bf7db27b036d2fa16b3ad102a65c87d147934d25670a1f42ff"
+    },
+    {
+      "dataset_index": 26,
+      "source_row": 26,
+      "sequence_sha256": "e71cab2cfbf4a2a4f34d2806b06a670dee3796f327bea956692543aead9f329f",
+      "threedi_sha256": "72688e3fe6dbb0199ac0ac6a955e75595340b13bd88e7cb856c0d2463d1cf1a3"
+    },
+    {
+      "dataset_index": 0,
+      "source_row": 0,
+      "sequence_sha256": "4b73b4951afee3bf609d330af04d4589046f85164eea16df69d953e46fdd83aa",
+      "threedi_sha256": "6fb3c0f882f7372cfd1a441821f8129368a9502746725b6d92f1794d607383c8"
+    },
+    {
+      "dataset_index": 2,
+      "source_row": 2,
+      "sequence_sha256": "84e76f6ddc37fa094e43f10c7d9bb8693ef8f1b8d63f96feb12c738535c56388",
+      "threedi_sha256": "e8363ad0fcd13b8a6ed8c51935cc2889ef091f9b4ee5923d7d27b36b1aafafa0"
+    },
+    {
+      "dataset_index": 22,
+      "source_row": 22,
+      "sequence_sha256": "d1d3fa8cc49296517656350ee0ecbd31f553ff693a6fb3a954818c9e9caa95ee",
+      "threedi_sha256": "3a6dbe6cf4752bea136547f14e083a5a93736424d8954e1e99e641a3767b96f5"
+    },
+    {
+      "dataset_index": 35,
+      "source_row": 35,
+      "sequence_sha256": "0a58e49762192cb6d6a41ff01e1ca0bf3cfa24a662251aa6a26ce82c6de1a9ca",
+      "threedi_sha256": "c752f51cf8d7a16880a174e52060c56acce4ff519441c09e23f34aba41b87c6a"
+    },
+    {
+      "dataset_index": 43,
+      "source_row": 43,
+      "sequence_sha256": "5555d98574a9b0a329ec8520f866cd82d1661699b081fe24741baf7de5602769",
+      "threedi_sha256": "903c1aca7918a40e84f6ca6014e12ac1f8b7a835f4c15ec98b74cf3bddefbd1d"
+    }
+  ]
+}

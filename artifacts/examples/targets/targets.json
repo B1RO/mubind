@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "source_repository": "https://github.com/NVIDIA-BioNeMo/Proteina-Complexa",
+  "source_revision": "acf55a89a9a7206d5ce9abc0bf2246c3b3829f92",
+  "source_config": "configs/targets/targets_dict.yaml",
+  "targets": {
+    "pdl1.pdb": {
+      "name": "PD-L1",
+      "target_spec": "A1-115",
+      "hotspots": [
+        "A37",
+        "A39",
+        "A49",
+        "A98"
+      ],
+      "binder_length": 64,
+      "upstream_binder_length": [
+        64,
+        155
+      ],
+      "upstream_config": "02_PDL1",
+      "source_path": "assets/target_data/bindcraft_targets/PD-L1.pdb",
+      "source_url": "https://raw.githubusercontent.com/NVIDIA-BioNeMo/Proteina-Complexa/acf55a89a9a7206d5ce9abc0bf2246c3b3829f92/assets/target_data/bindcraft_targets/PD-L1.pdb"
+    },
+    "ifnar2.pdb": {
+      "name": "IFNAR2",
+      "target_spec": "A1-103",
+      "hotspots": [
+        "A45",
+        "A73",
+        "A75",
+        "A77",
+        "A89",
+        "A91"
+      ],
+      "binder_length": 64,
+      "upstream_binder_length": [
+        60,
+        175
+      ],
+      "upstream_config": "04_IFNAR2",
+      "source_path": "assets/target_data/bindcraft_targets/IFNAR2.pdb",
+      "source_url": "https://raw.githubusercontent.com/NVIDIA-BioNeMo/Proteina-Complexa/acf55a89a9a7206d5ce9abc0bf2246c3b3829f92/assets/target_data/bindcraft_targets/IFNAR2.pdb"
+    },
+    "bbf14.pdb": {
+      "name": "BBF-14",
+      "target_spec": "A1-112",
+      "hotspots": [],
+      "binder_length": 70,
+      "upstream_binder_length": [
+        70,
+        250
+      ],
+      "upstream_config": "13_BBF14",
+      "source_path": "assets/target_data/bindcraft_targets/BBF-14.pdb",
+      "source_url": "https://raw.githubusercontent.com/NVIDIA-BioNeMo/Proteina-Complexa/acf55a89a9a7206d5ce9abc0bf2246c3b3829f92/assets/target_data/bindcraft_targets/BBF-14.pdb"
+    },
+    "derf7.pdb": {
+      "name": "DerF7",
+      "target_spec": "A1-196",
+      "hotspots": [
+        "A115"
+      ],
+      "binder_length": 70,
+      "upstream_binder_length": [
+        70,
+        185
+      ],
+      "upstream_config": "15_DerF7",
+      "source_path": "assets/target_data/bindcraft_targets/DerF7.pdb",
+      "source_url": "https://raw.githubusercontent.com/NVIDIA-BioNeMo/Proteina-Complexa/acf55a89a9a7206d5ce9abc0bf2246c3b3829f92/assets/target_data/bindcraft_targets/DerF7.pdb"
+    },
+    "derf21.pdb": {
+      "name": "DerF21",
+      "target_spec": "A1-118",
+      "hotspots": [
+        "A10"
+      ],
+      "binder_length": 70,
+      "upstream_binder_length": [
+        70,
+        185
+      ],
+      "upstream_config": "18_DerF21",
+      "source_path": "assets/target_data/bindcraft_targets/DerF21.pdb",
+      "source_url": "https://raw.githubusercontent.com/NVIDIA-BioNeMo/Proteina-Complexa/acf55a89a9a7206d5ce9abc0bf2246c3b3829f92/assets/target_data/bindcraft_targets/DerF21.pdb"
+    },
+    "betv1.pdb": {
+      "name": "BetV1",
+      "target_spec": "A1-159",
+      "hotspots": [
+        "A24"
+      ],
+      "binder_length": 70,
+      "upstream_binder_length": [
+        70,
+        185
+      ],
+      "upstream_config": "23_BetV1",
+      "source_path": "assets/target_data/bindcraft_targets/BetV1.pdb",
+      "source_url": "https://raw.githubusercontent.com/NVIDIA-BioNeMo/Proteina-Complexa/acf55a89a9a7206d5ce9abc0bf2246c3b3829f92/assets/target_data/bindcraft_targets/BetV1.pdb"
+    },
+    "cbago_paz.pdb": {
+      "name": "CbAgo PAZ domain",
+      "target_spec": "A180-276",
+      "hotspots": [
+        "A268"
+      ],
+      "binder_length": 70,
+      "upstream_binder_length": [
+        70,
+        160
+      ],
+      "upstream_config": "26_CbAgo",
+      "source_path": "assets/target_data/bindcraft_targets/CbAgo_cropped_PAZ.pdb",
+      "source_url": "https://raw.githubusercontent.com/NVIDIA-BioNeMo/Proteina-Complexa/acf55a89a9a7206d5ce9abc0bf2246c3b3829f92/assets/target_data/bindcraft_targets/CbAgo_cropped_PAZ.pdb"
+    },
+    "il7ra.pdb": {
+      "name": "IL7RA",
+      "target_spec": "B17-209",
+      "hotspots": [
+        "B58",
+        "B80",
+        "B139"
+      ],
+      "binder_length": 64,
+      "upstream_binder_length": [
+        50,
+        120
+      ],
+      "upstream_config": "31_IL7RA",
+      "source_path": "assets/target_data/alpha_proteo_targets/3di3_cropped.pdb",
+      "source_url": "https://raw.githubusercontent.com/NVIDIA-BioNeMo/Proteina-Complexa/acf55a89a9a7206d5ce9abc0bf2246c3b3829f92/assets/target_data/alpha_proteo_targets/3di3_cropped.pdb"
+    },
+    "trka_1WWW.pdb": {
+      "name": "TrkA",
+      "target_spec": "X282-382",
+      "hotspots": [
+        "X294",
+        "X296",
+        "X333"
+      ],
+      "binder_length": 64,
+      "upstream_binder_length": [
+        50,
+        120
+      ],
+      "upstream_config": "33_TrkA",
+      "source_path": "assets/target_data/alpha_proteo_targets/1www_cropped.pdb",
+      "source_url": "https://raw.githubusercontent.com/NVIDIA-BioNeMo/Proteina-Complexa/acf55a89a9a7206d5ce9abc0bf2246c3b3829f92/assets/target_data/alpha_proteo_targets/1www_cropped.pdb"
+    },
+    "insulin_4ZXB.pdb": {
+      "name": "Insulin",
+      "target_spec": "E6-155",
+      "hotspots": [
+        "E64",
+        "E88",
+        "E96"
+      ],
+      "binder_length": 64,
+      "upstream_binder_length": [
+        40,
+        120
+      ],
+      "upstream_config": "34_Insulin",
+      "source_path": "assets/target_data/alpha_proteo_targets/4zxb_cropped.pdb",
+      "source_url": "https://raw.githubusercontent.com/NVIDIA-BioNeMo/Proteina-Complexa/acf55a89a9a7206d5ce9abc0bf2246c3b3829f92/assets/target_data/alpha_proteo_targets/4zxb_cropped.pdb"
+    }
+  }
+}

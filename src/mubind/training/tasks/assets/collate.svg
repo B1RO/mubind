@@ -1,0 +1,1062 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="1236" viewBox="0 0 1320 1236" role="img" xml:space="preserve">
+<title>How collate.py turns clean ProstT5Dataset rows into a conditioned training batch</title>
+<desc>TaskCollator.collate turns a list of B clean ProstT5Dataset rows into one training batch. Two rows are drawn side by side in every card, proteins of 67 and 55 residues on a 70-position canvas, and a faded third column shows that the batch continues. default_collate stacks x [B, 8, 70], seed_3di [B, 70], residue_mask [B, 70], c [B, 3] and dimer_index [B]. Step 1, sample_task_batch in sampling.py, lets each row draw its own task. Row 0 draws the middle layout, keeps the slice [12, 52) in seed_x, lets spans.py cut the hole [27, 34), and makes both ends editable in edit_mask. Its 3Di stays on fixed context and on the two ends, while the hole loses it. Row 1 draws redesign with mode 3di, so seed_x is empty, edit_mask covers the whole canvas including padding, and all 55 3Di tokens stay. Step 2, mask_training_threedi_conditioning in masking.py, runs only in training and hides spans of the remaining 3Di tokens on editable residues, zeroing them in seed_3di and marking them in threedi_conditioning_hidden_mask. Step 3, property_mask in masking.py, builds condition_mask [B, 3]. Row 0 keeps length and hydrophobicity and hides charge; row 1, a 3di redesign, hides all three. The batch then goes to training/step.py, where model_inputs reads seed_x, edit_mask, seed_3di, threedi_conditioning_hidden_mask, c and condition_mask, and compute_loss reads x, edit_mask, residue_mask and target_length.</desc>
+<style>
+text { font-family: "DejaVu Sans", Verdana, "Segoe UI", sans-serif; }
+.folder, .file-name, .code, .code-dim, .key, .box-text, .tick { font-family: "DejaVu Sans Mono", Consolas, monospace; }
+.file { fill: #f6f5f1; stroke: #d5d3ca; }
+.file-name { font-size: 13px; font-weight: 700; fill: #2b2b2b; }
+.card { fill: #ffffff; stroke: #cfcdc5; }
+.card-head { fill: #edece7; }
+.card-rule { stroke: #cfcdc5; }
+.folder { font-size: 11px; font-weight: 700; fill: #2b2b2b; }
+.head-aside { font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 10px; fill: #8a8a8a; text-anchor: end; }
+.tick { font-size: 10px; fill: #7a7a7a; }
+.code { font-size: 10px; fill: #3f4752; }
+.code-dim { font-size: 10px; fill: #9a978e; }
+.key { font-size: 11px; font-weight: 700; fill: #2b2b2b; }
+.peek-ink { fill: #b9b6ad; }
+.side { font-size: 10px; fill: #8a8a8a; }
+.note { font-size: 11.5px; fill: #5f6b7a; }
+.colhead { font-size: 9.5px; fill: #8a8a8a; text-anchor: middle; }
+.lut { stroke: #ffffff; stroke-width: 1; }
+.pad { fill: #faf9f5; stroke: #d9d7ce; stroke-width: 0.8; }
+.off { fill: #faf9f5; stroke: #d9d7ce; stroke-width: 0.8; }
+.box { fill: #ffffff; stroke: #b9b6ad; stroke-width: 0.8; }
+.box.hid { fill: #ebe9e3; stroke: #d9d7ce; }
+.box-text { font-size: 10px; fill: #2b2b2b; text-anchor: middle; }
+.box-text.dim { fill: #9a978e; }
+.pick { fill: none; stroke: #3f4752; stroke-width: 1.2; }
+.arrow { stroke: #8c8c8c; stroke-width: 1.2; fill: none; }
+.head { fill: #8c8c8c; }
+.bracket { fill: none; stroke: #b9b6ad; }
+</style>
+<defs><linearGradient id="fade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="0.85" stop-color="#ffffff" stop-opacity="1"/></linearGradient></defs>
+<rect width="1320" height="1236" fill="#ffffff"/>
+<path class="file" d="M24 25Q24 20 29 20H121.27Q126.27 20 126.27 25V48H1291Q1296 48 1296 53V1211Q1296 1216 1291 1216H29Q24 1216 24 1211Z"/>
+<text class="file-name" x="36" y="39">collate.py</text>
+<rect class="card" x="46" y="72" width="1228" height="196" rx="4"/>
+<path class="card-head" d="M46 94V76Q46 72 50 72H1270Q1274 72 1274 76V94Z"/>
+<line class="card-rule" x1="46" y1="94" x2="1274" y2="94"/>
+<text class="folder" x="56" y="87">clean batch</text>
+<text class="head-aside" x="1264" y="87">default_collate(rows)</text>
+<text class="code" x="60" y="112">x [B, 8, 70]   seed_3di [B, 70]   residue_mask [B, 70]   c [B, 3]   dimer_index [B]</text>
+<text class="side" x="1264" y="112" text-anchor="end">B complete proteins, two drawn</text>
+<text class="key" x="300" y="138">row 0</text>
+<text class="side" x="339.739" y="138">67 residues</text>
+<text class="key" x="760" y="138">row 1</text>
+<text class="side" x="799.739" y="138">55 residues</text>
+<text class="key peek-ink" x="1214" y="138">row 2 …</text>
+<text class="key" x="284" y="162" text-anchor="end">x</text>
+<text class="key" x="284" y="180" text-anchor="end">seed_3di</text>
+<rect class="pad" x="702" y="152" width="18" height="12"/>
+<rect class="lut" x="300" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="306" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="312" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="318" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="324" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="330" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="336" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="342" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="348" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="354" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="360" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="366" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="372" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="378" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="384" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="390" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="396" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="402" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="408" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="414" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="420" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="426" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="432" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="438" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="444" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="450" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="456" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="462" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="468" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="474" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="480" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="486" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="492" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="498" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="504" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="510" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="516" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="522" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="528" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="534" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="540" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="546" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="552" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="558" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="564" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="570" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="576" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="582" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="588" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="594" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="600" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="606" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="612" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="618" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="624" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="630" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="636" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="642" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="648" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="654" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="660" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="666" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="672" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="678" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="684" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="690" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="696" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="pad" x="702" y="170" width="18" height="12"/>
+<rect class="lut" x="300" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="306" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="312" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="318" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="324" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="330" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="336" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="342" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="348" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="354" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="360" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="366" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="372" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="378" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="384" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="390" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="396" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="402" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="408" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="414" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="420" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="426" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="432" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="438" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="444" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="450" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="456" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="462" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="468" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="474" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="480" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="486" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="492" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="498" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="504" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="510" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="516" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="522" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="528" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="534" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="540" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="546" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="552" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="558" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="564" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="570" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="576" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="582" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="588" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="594" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="600" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="606" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="612" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="618" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="624" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="630" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="636" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="642" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="648" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="654" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="660" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="666" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="672" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="678" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="684" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="690" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="696" y="170" width="6" height="12" fill="#e3c687"/>
+<text class="tick" x="300" y="194" text-anchor="middle">0</text>
+<text class="tick" x="702" y="194" text-anchor="middle">67</text>
+<text class="tick" x="720" y="194" text-anchor="middle">70</text>
+<rect class="pad" x="1090" y="152" width="90" height="12"/>
+<rect class="lut" x="760" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="766" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="772" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="778" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="784" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="790" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="796" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="802" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="808" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="814" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="820" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="826" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="832" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="838" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="844" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="850" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="856" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="862" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="868" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="874" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="880" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="886" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="892" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="898" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="904" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="910" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="916" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="922" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="928" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="934" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="940" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="946" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="952" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="958" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="964" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="970" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="976" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="982" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="988" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="994" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1000" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1006" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1012" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1018" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1024" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1030" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1036" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1042" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1048" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1054" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1060" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1066" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1072" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1078" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1084" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="pad" x="1090" y="170" width="90" height="12"/>
+<rect class="lut" x="760" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="766" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="772" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="778" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="784" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="790" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="796" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="802" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="808" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="814" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="820" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="826" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="832" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="838" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="844" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="850" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="856" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="862" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="868" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="874" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="880" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="886" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="892" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="898" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="904" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="910" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="916" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="922" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="928" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="934" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="940" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="946" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="952" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="958" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="964" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="970" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="976" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="982" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="988" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="994" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1000" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1006" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1012" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1018" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1024" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1030" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1036" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1042" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1048" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1054" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1060" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1066" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1072" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1078" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1084" y="170" width="6" height="12" fill="#e3c687"/>
+<text class="tick" x="760" y="194" text-anchor="middle">0</text>
+<text class="tick" x="1090" y="194" text-anchor="middle">55</text>
+<text class="tick" x="1180" y="194" text-anchor="middle">70</text>
+<text class="key" x="284" y="243" text-anchor="end">c</text>
+<text class="colhead" x="323" y="222">len</text>
+<text class="colhead" x="373" y="222">chg</text>
+<text class="colhead" x="423" y="222">hyd</text>
+<rect class="box" x="300" y="228" width="46" height="20" rx="3"/>
+<text class="box-text" x="323" y="242">67</text>
+<rect class="box" x="350" y="228" width="46" height="20" rx="3"/>
+<text class="box-text" x="373" y="242">−5.0</text>
+<rect class="box" x="400" y="228" width="46" height="20" rx="3"/>
+<text class="box-text" x="423" y="242">0.21</text>
+<text class="colhead" x="783" y="222">len</text>
+<text class="colhead" x="833" y="222">chg</text>
+<text class="colhead" x="883" y="222">hyd</text>
+<rect class="box" x="760" y="228" width="46" height="20" rx="3"/>
+<text class="box-text" x="783" y="242">55</text>
+<rect class="box" x="810" y="228" width="46" height="20" rx="3"/>
+<text class="box-text" x="833" y="242">+1.2</text>
+<rect class="box" x="860" y="228" width="46" height="20" rx="3"/>
+<text class="box-text" x="883" y="242">−0.08</text>
+<rect class="lut" x="1214" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1220" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1226" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1232" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1238" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1244" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1250" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1256" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1262" y="152" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1214" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1220" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1226" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1232" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1238" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1244" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1250" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1256" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1262" y="170" width="6" height="12" fill="#e3c687"/>
+<rect class="box" x="1214" y="228" width="46" height="20" rx="3"/>
+<rect x="1212" y="148" width="61" height="102" fill="url(#fade)"/>
+<line class="arrow" x1="170" y1="268" x2="170" y2="306"/>
+<path class="head" d="M166 305L174 305L170 312Z"/>
+<text class="key" x="182" y="294">config.for_step(step)</text>
+<rect class="card" x="46" y="312" width="1228" height="282" rx="4"/>
+<path class="card-head" d="M46 334V316Q46 312 50 312H1270Q1274 312 1274 316V334Z"/>
+<line class="card-rule" x1="46" y1="334" x2="1274" y2="334"/>
+<text class="folder" x="56" y="327">Step 1 · task sampling</text>
+<text class="head-aside" x="1264" y="327">sampling.py · sample_task_batch</text>
+<text class="code" x="60" y="352">seed_x [B, 8, 70]   edit_mask [B, 70]   seed_3di [B, 70]   layout_id [B]   redesign_conditioning_id [B]</text>
+<text class="side" x="1264" y="352" text-anchor="end">each row draws its own task</text>
+<text class="key" x="300" y="378">row 0</text>
+<text class="side" x="339.739" y="378">inpainting</text>
+<text class="key" x="760" y="378">row 1</text>
+<text class="side" x="799.739" y="378">full redesign</text>
+<text class="key peek-ink" x="1214" y="378">row 2 …</text>
+<text class="code-dim" x="284" y="402" text-anchor="end">layout</text>
+<text class="code-dim" x="284" y="422" text-anchor="end">mode</text>
+<text class="code-dim" x="300" y="402">complete</text>
+<text class="code-dim" x="360.21" y="402">prefix</text>
+<text class="code-dim" x="408.378" y="402">suffix</text>
+<rect class="pick" x="452.5" y="391" width="44.1" height="15" rx="3"/>
+<text class="code" x="456.546" y="402">middle</text>
+<text class="code-dim" x="504.714" y="402">redesign</text>
+<text class="code-dim" x="300" y="422">−1, not a redesign</text>
+<text class="code-dim" x="760" y="402">complete</text>
+<text class="code-dim" x="820.21" y="402">prefix</text>
+<text class="code-dim" x="868.378" y="402">suffix</text>
+<text class="code-dim" x="916.546" y="402">middle</text>
+<rect class="pick" x="960.7" y="391" width="56.2" height="15" rx="3"/>
+<text class="code" x="964.714" y="402">redesign</text>
+<text class="code-dim" x="760" y="422">unconditional</text>
+<text class="code-dim" x="850.315" y="422">properties</text>
+<rect class="pick" x="918.6" y="411" width="26.1" height="15" rx="3"/>
+<text class="code" x="922.567" y="422">3di</text>
+<text class="code-dim" x="952.672" y="422">properties_3di</text>
+<text class="key" x="284" y="446" text-anchor="end">seed_x</text>
+<text class="key" x="284" y="464" text-anchor="end">edit_mask</text>
+<text class="key" x="284" y="482" text-anchor="end">seed_3di</text>
+<rect class="pad" x="702" y="436" width="18" height="12"/>
+<rect class="lut" x="300" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="306" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="312" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="318" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="324" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="330" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="336" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="342" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="348" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="354" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="360" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="366" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="372" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="378" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="384" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="390" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="396" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="402" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="408" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="414" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="420" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="426" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="432" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="438" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="444" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="450" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="456" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="462" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="468" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="474" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="480" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="486" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="492" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="498" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="504" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="510" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="516" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="522" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="528" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="534" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="540" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="546" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="552" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="558" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="564" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="570" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="576" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="582" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="588" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="594" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="600" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="606" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="612" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="618" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="624" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="630" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="636" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="642" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="648" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="654" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="660" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="666" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="672" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="678" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="684" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="690" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="696" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="off" x="300" y="454" width="420" height="12"/>
+<rect class="lut" x="300" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="306" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="312" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="318" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="324" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="330" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="336" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="342" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="348" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="354" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="360" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="366" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="462" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="468" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="474" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="480" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="486" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="492" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="498" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="612" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="618" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="624" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="630" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="636" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="642" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="648" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="654" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="660" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="666" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="672" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="678" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="684" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="690" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="696" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="pad" x="702" y="472" width="18" height="12"/>
+<rect class="lut" x="300" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="306" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="312" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="318" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="324" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="330" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="336" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="342" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="348" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="354" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="360" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="366" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="372" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="378" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="384" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="390" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="396" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="402" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="408" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="414" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="420" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="426" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="432" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="438" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="444" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="450" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="456" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="462" y="472" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="468" y="472" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="474" y="472" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="480" y="472" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="486" y="472" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="492" y="472" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="498" y="472" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="504" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="510" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="516" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="522" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="528" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="534" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="540" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="546" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="552" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="558" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="564" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="570" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="576" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="582" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="588" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="594" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="600" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="606" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="612" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="618" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="624" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="630" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="636" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="642" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="648" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="654" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="660" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="666" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="672" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="678" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="684" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="690" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="696" y="472" width="6" height="12" fill="#e3c687"/>
+<path class="bracket" d="M373 492v4H611v-4"/>
+<text class="side" x="492" y="507" text-anchor="middle">visible [12, 52)</text>
+<rect class="pad" x="1090" y="436" width="90" height="12"/>
+<rect class="lut" x="760" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="766" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="772" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="778" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="784" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="790" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="796" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="802" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="808" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="814" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="820" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="826" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="832" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="838" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="844" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="850" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="856" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="862" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="868" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="874" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="880" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="886" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="892" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="898" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="904" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="910" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="916" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="922" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="928" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="934" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="940" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="946" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="952" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="958" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="964" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="970" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="976" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="982" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="988" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="994" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1000" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1006" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1012" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1018" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1024" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1030" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1036" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1042" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1048" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1054" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1060" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1066" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1072" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1078" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1084" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="off" x="760" y="454" width="420" height="12"/>
+<rect class="lut" x="760" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="766" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="772" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="778" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="784" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="790" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="796" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="802" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="808" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="814" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="820" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="826" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="832" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="838" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="844" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="850" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="856" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="862" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="868" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="874" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="880" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="886" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="892" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="898" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="904" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="910" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="916" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="922" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="928" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="934" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="940" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="946" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="952" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="958" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="964" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="970" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="976" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="982" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="988" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="994" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1000" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1006" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1012" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1018" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1024" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1030" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1036" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1042" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1048" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1054" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1060" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1066" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1072" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1078" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1084" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1090" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1096" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1102" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1108" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1114" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1120" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1126" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1132" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1138" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1144" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1150" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1156" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1162" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1168" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1174" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="pad" x="1090" y="472" width="90" height="12"/>
+<rect class="lut" x="760" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="766" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="772" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="778" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="784" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="790" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="796" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="802" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="808" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="814" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="820" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="826" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="832" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="838" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="844" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="850" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="856" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="862" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="868" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="874" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="880" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="886" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="892" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="898" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="904" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="910" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="916" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="922" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="928" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="934" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="940" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="946" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="952" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="958" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="964" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="970" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="976" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="982" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="988" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="994" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1000" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1006" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1012" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1018" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1024" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1030" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1036" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1042" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1048" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1054" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1060" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1066" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1072" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1078" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1084" y="472" width="6" height="12" fill="#e3c687"/>
+<text class="tick" x="760" y="496" text-anchor="middle">0</text>
+<text class="tick" x="1090" y="496" text-anchor="middle">55</text>
+<text class="tick" x="1180" y="496" text-anchor="middle">70</text>
+<text class="note" x="300" y="532">keeps the slice [12, 52), spans.py cuts the hole [27, 34)</text>
+<text class="note" x="300" y="547">and both ends become editable</text>
+<text class="note" x="300" y="562">3Di stays on fixed context, each editable run keeps it</text>
+<text class="note" x="300" y="577">with p = 0.5, here both ends do and the hole does not</text>
+<text class="note" x="760" y="532">keeps no sequence, the whole canvas is editable,</text>
+<text class="note" x="760" y="547">padding included</text>
+<text class="note" x="760" y="562">mode 3di keeps all 55 3Di tokens</text>
+<rect class="lut" x="1214" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1220" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1226" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1232" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1238" y="436" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1244" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1250" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1256" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="lut" x="1262" y="436" width="6" height="12" fill="#b4c5d7"/>
+<rect class="off" x="1214" y="454" width="54" height="12"/>
+<rect class="lut" x="1214" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1220" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1226" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1232" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1238" y="454" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1214" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1220" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1226" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1232" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1238" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1244" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1250" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1256" y="472" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1262" y="472" width="6" height="12" fill="#e3c687"/>
+<rect x="1212" y="432" width="61" height="60" fill="url(#fade)"/>
+<line class="arrow" x1="170" y1="594" x2="170" y2="632"/>
+<path class="head" d="M166 631L174 631L170 638Z"/>
+<text class="key" x="182" y="620">training only</text>
+<rect class="card" x="46" y="638" width="1228" height="188" rx="4"/>
+<path class="card-head" d="M46 660V642Q46 638 50 638H1270Q1274 638 1274 642V660Z"/>
+<line class="card-rule" x1="46" y1="660" x2="1274" y2="660"/>
+<text class="folder" x="56" y="653">Step 2 · 3Di masking</text>
+<text class="head-aside" x="1264" y="653">masking.py · mask_training_threedi_conditioning</text>
+<text class="note" x="60" y="678">multiple_spans keeps a random share of the 3Di tokens on editable residues through spans.py and hides the rest</text>
+<text class="key" x="300" y="704">row 0</text>
+<text class="side" x="339.739" y="704">middle</text>
+<text class="key" x="760" y="704">row 1</text>
+<text class="side" x="799.739" y="704">redesign 3di</text>
+<text class="key peek-ink" x="1214" y="704">row 2 …</text>
+<text class="key" x="284" y="728" text-anchor="end">seed_3di</text>
+<text class="key" x="284" y="746" text-anchor="end">threedi_conditioning_hidden_mask</text>
+<rect class="pad" x="702" y="718" width="18" height="12"/>
+<rect class="lut" x="300" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="306" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="312" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="318" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="324" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="330" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="336" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="342" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="348" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="354" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="360" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="366" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="372" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="378" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="384" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="390" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="396" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="402" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="408" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="414" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="420" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="426" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="432" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="438" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="444" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="450" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="456" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="462" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="468" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="474" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="480" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="486" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="492" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="498" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="504" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="510" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="516" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="522" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="528" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="534" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="540" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="546" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="552" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="558" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="564" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="570" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="576" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="582" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="588" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="594" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="600" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="606" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="612" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="618" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="624" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="630" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="636" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="642" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="648" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="654" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="660" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="666" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="672" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="678" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="684" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="690" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="696" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="off" x="300" y="736" width="420" height="12"/>
+<rect class="lut" x="318" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="324" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="330" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="336" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="342" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="348" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="660" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="666" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="672" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="678" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="684" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="690" y="736" width="6" height="12" fill="#6b7787"/>
+<path class="bracket" d="M301 752v4H371v-4"/>
+<text class="side" x="336" y="767" text-anchor="middle">eligible</text>
+<path class="bracket" d="M613 752v4H701v-4"/>
+<text class="side" x="657" y="767" text-anchor="middle">eligible</text>
+<rect class="pad" x="1090" y="718" width="90" height="12"/>
+<rect class="lut" x="760" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="766" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="772" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="778" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="784" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="790" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="796" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="802" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="808" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="814" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="820" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="826" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="832" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="838" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="844" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="850" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="856" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="862" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="868" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="874" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="880" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="886" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="892" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="898" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="904" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="910" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="916" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="922" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="928" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="934" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="940" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="946" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="952" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="958" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="964" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="970" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="976" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="982" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="988" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="994" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1000" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1006" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1012" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1018" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1024" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1030" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1036" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1042" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1048" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1054" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1060" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1066" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1072" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1078" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1084" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="off" x="760" y="736" width="420" height="12"/>
+<rect class="lut" x="808" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="814" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="820" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="826" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="832" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="838" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="844" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="850" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="856" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="862" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="868" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="874" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="880" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="988" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="994" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1000" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1006" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1012" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1018" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1024" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1030" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1036" y="736" width="6" height="12" fill="#6b7787"/>
+<path class="bracket" d="M761 752v4H1089v-4"/>
+<text class="side" x="925" y="767" text-anchor="middle">eligible, all 55 tokens</text>
+<text class="note" x="300" y="794">eligible are the two kept ends, fixed context is never hidden</text>
+<text class="note" x="300" y="809">the hole lost its 3Di in step 1, so it is not recorded here</text>
+<text class="note" x="760" y="794">hidden tokens become 0 in seed_3di</text>
+<text class="note" x="760" y="809">x, seed_x and edit_mask stay as they are</text>
+<rect class="lut" x="1214" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1220" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1226" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1232" y="718" width="6" height="12" fill="#e3c687"/>
+<rect class="lut" x="1238" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1244" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1250" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1256" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="lut" x="1262" y="718" width="6" height="12" fill="#ebe9e3"/>
+<rect class="off" x="1214" y="736" width="54" height="12"/>
+<rect class="lut" x="1238" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1244" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1250" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1256" y="736" width="6" height="12" fill="#6b7787"/>
+<rect class="lut" x="1262" y="736" width="6" height="12" fill="#6b7787"/>
+<rect x="1212" y="714" width="61" height="42" fill="url(#fade)"/>
+<line class="arrow" x1="170" y1="826" x2="170" y2="864"/>
+<path class="head" d="M166 863L174 863L170 870Z"/>
+<text class="key" x="182" y="852">training and validation</text>
+<rect class="card" x="46" y="870" width="1228" height="314" rx="4"/>
+<path class="card-head" d="M46 892V874Q46 870 50 870H1270Q1274 870 1274 874V892Z"/>
+<line class="card-rule" x1="46" y1="892" x2="1274" y2="892"/>
+<text class="folder" x="56" y="885">Step 3 · property masking</text>
+<text class="head-aside" x="1264" y="885">masking.py · property_mask</text>
+<text class="note" x="60" y="910">Validation skips the random draw, so only 3di and unconditional rows lose properties</text>
+<text class="key" x="300" y="936">row 0</text>
+<text class="side" x="339.739" y="936">middle</text>
+<text class="key" x="760" y="936">row 1</text>
+<text class="side" x="799.739" y="936">redesign 3di</text>
+<text class="key peek-ink" x="1214" y="936">row 2 …</text>
+<text class="colhead" x="323" y="958">len</text>
+<text class="colhead" x="373" y="958">chg</text>
+<text class="colhead" x="423" y="958">hyd</text>
+<text class="colhead" x="783" y="958">len</text>
+<text class="colhead" x="833" y="958">chg</text>
+<text class="colhead" x="883" y="958">hyd</text>
+<text class="key" x="284" y="978" text-anchor="end">c</text>
+<text class="key" x="284" y="1006" text-anchor="end">condition_mask</text>
+<text class="side" x="284" y="1034" text-anchor="end">what the model sees</text>
+<rect class="box" x="300" y="964" width="46" height="20" rx="3"/>
+<text class="box-text" x="323" y="978">67</text>
+<rect class="box" x="350" y="964" width="46" height="20" rx="3"/>
+<text class="box-text" x="373" y="978">−5.0</text>
+<rect class="box" x="400" y="964" width="46" height="20" rx="3"/>
+<text class="box-text" x="423" y="978">0.21</text>
+<rect class="box" x="300" y="992" width="46" height="20" rx="3"/>
+<text class="box-text" x="323" y="1006">1</text>
+<rect class="box hid" x="350" y="992" width="46" height="20" rx="3"/>
+<text class="box-text dim" x="373" y="1006">0</text>
+<rect class="box" x="400" y="992" width="46" height="20" rx="3"/>
+<text class="box-text" x="423" y="1006">1</text>
+<rect class="box" x="300" y="1020" width="46" height="20" rx="3"/>
+<text class="box-text" x="323" y="1034">67</text>
+<rect class="box hid" x="350" y="1020" width="46" height="20" rx="3"/>
+<rect class="box" x="400" y="1020" width="46" height="20" rx="3"/>
+<text class="box-text" x="423" y="1034">0.21</text>
+<text class="note" x="468" y="1006">uniform_subset keeps K of the 3,</text>
+<text class="note" x="468" y="1021">K drawn from 0 to 3, here K = 2</text>
+<rect class="box" x="760" y="964" width="46" height="20" rx="3"/>
+<text class="box-text" x="783" y="978">55</text>
+<rect class="box" x="810" y="964" width="46" height="20" rx="3"/>
+<text class="box-text" x="833" y="978">+1.2</text>
+<rect class="box" x="860" y="964" width="46" height="20" rx="3"/>
+<text class="box-text" x="883" y="978">−0.08</text>
+<rect class="box hid" x="760" y="992" width="46" height="20" rx="3"/>
+<text class="box-text dim" x="783" y="1006">0</text>
+<rect class="box hid" x="810" y="992" width="46" height="20" rx="3"/>
+<text class="box-text dim" x="833" y="1006">0</text>
+<rect class="box hid" x="860" y="992" width="46" height="20" rx="3"/>
+<text class="box-text dim" x="883" y="1006">0</text>
+<rect class="box hid" x="760" y="1020" width="46" height="20" rx="3"/>
+<rect class="box hid" x="810" y="1020" width="46" height="20" rx="3"/>
+<rect class="box hid" x="860" y="1020" width="46" height="20" rx="3"/>
+<text class="note" x="928" y="1006">3di and unconditional redesign</text>
+<text class="note" x="928" y="1021">always hide all three</text>
+<rect class="box" x="1214" y="964" width="46" height="20" rx="3"/>
+<rect class="box" x="1214" y="992" width="46" height="20" rx="3"/>
+<rect class="box" x="1214" y="1020" width="46" height="20" rx="3"/>
+<rect x="1212" y="960" width="61" height="84" fill="url(#fade)"/>
+<line class="card-rule" x1="60" y1="1060" x2="1260" y2="1060"/>
+<text class="key" x="60" y="1086">batch</text>
+<text class="side" x="99.7386" y="1086">goes to training/step.py</text>
+<text class="side" x="1264" y="1086" text-anchor="end">x and c stay clean, the masks say what is hidden</text>
+<text class="code-dim" x="60" y="1108">model_inputs</text>
+<text class="code" x="160" y="1108">seed_x  edit_mask  seed_3di  threedi_conditioning_hidden_mask  c  condition_mask</text>
+<text class="code-dim" x="60" y="1125">compute_loss</text>
+<text class="code" x="160" y="1125">x  edit_mask  residue_mask  target_length</text>
+<text class="code-dim" x="60" y="1142">also kept</text>
+<text class="code" x="160" y="1142">layout_id  redesign_conditioning_id  target_offset  visible_start  visible_end</text>
+<text class="code-dim" x="60" y="1159"></text>
+<text class="code" x="160" y="1159">window_start  window_end  internal_budget  span_count  dimer_index</text>
+<rect class="lut" x="60" y="1201" width="10" height="10" fill="#b4c5d7"/>
+<text class="side" x="76" y="1210">kept sequence</text>
+<rect class="lut" x="161.39999999999998" y="1201" width="10" height="10" fill="#e3c687"/>
+<text class="side" x="177.4" y="1210">3Di token</text>
+<rect class="lut" x="239.59999999999997" y="1201" width="10" height="10" fill="#ebe9e3"/>
+<text class="side" x="255.6" y="1210">zeroed</text>
+<rect class="lut" x="300.4" y="1201" width="10" height="10" fill="#6b7787"/>
+<text class="side" x="316.4" y="1210">True in a mask</text>
+<rect class="pad" x="407.59999999999997" y="1201" width="10" height="10"/>
+<text class="side" x="423.6" y="1210">padding</text>
+<text class="side" x="1274" y="1210" text-anchor="end">one illustrative draw, two of B rows, canvas 70</text>
+</svg>

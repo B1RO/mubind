@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="420" viewBox="0 0 680 420" role="img">
+<title>GPU memory budget</title>
+<desc>Model weights take a fixed 14.1 GiB, mostly ESMC at 11.8 GiB. Working memory adds 0.4 GiB for a 140-residue fold, 1.6 GiB for Complexa at 512 residues, and 3.9 GiB for a 512-residue fold, giving totals of 14.5, 15.7 and 18.0 GiB. The largest case exceeds a 16 GiB GPU.</desc>
+<style>
+text { font-family: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; dominant-baseline: central; }
+.t  { font-size: 14px; font-weight: 400; fill: #1f2328; }
+.th { font-size: 14px; font-weight: 500; fill: #1f2328; }
+.ts { font-size: 12px; font-weight: 400; fill: #59636e; }
+.grid { stroke: #d0d7de; }
+.ref { stroke: #59636e; }
+@media (prefers-color-scheme: dark) {
+  .t, .th { fill: #e6edf3; }
+  .ts { fill: #9198a1; }
+  .grid { stroke: #30363d; }
+  .ref { stroke: #9198a1; }
+}
+</style>
+<defs>
+<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#BA7517" stroke-width="1.2" opacity="0.5"/></pattern>
+</defs>
+
+<text class="th" x="40" y="62">Model weights</text>
+<text class="ts" x="40" y="80">fixed size</text>
+
+<rect x="163" y="49" width="333" height="42" rx="14" fill="#378ADD" opacity="0.13"/>
+<rect x="170" y="56" width="264.5" height="28" rx="6" fill="#185FA5"/>
+<text class="ts" x="302" y="70" text-anchor="middle" style="fill:#E6F1FB">ESMC, BF16 · 11.8 GiB</text>
+<rect x="436" y="56" width="14.5" height="28" rx="3" fill="#378ADD"/>
+<rect x="452" y="56" width="33.5" height="28" rx="3" fill="#85B7EB"/>
+<rect x="487" y="56" width="2.5" height="28" rx="1" fill="#0C447C"/>
+
+<text class="th" x="640" y="70" text-anchor="end">14.1 GiB</text>
+
+<path d="M488 92 L488 104 L496 104" fill="none" stroke="#378ADD" stroke-width="0.75" stroke-dasharray="2 2"/>
+<path d="M468.75 92 L468.75 120 L496 120" fill="none" stroke="#378ADD" stroke-width="0.75" stroke-dasharray="2 2"/>
+<path d="M443 92 L443 136 L496 136" fill="none" stroke="#378ADD" stroke-width="0.75" stroke-dasharray="2 2"/>
+<text class="ts" x="500" y="104">Our model · 0.014</text>
+<text class="ts" x="500" y="120">Complexa + AE · 1.55</text>
+<text class="ts" x="500" y="136">ESMFold2-Fast · 0.7</text>
+
+<line class="grid" x1="260" y1="188" x2="260" y2="336" stroke-width="0.5"/>
+<line class="grid" x1="350" y1="188" x2="350" y2="336" stroke-width="0.5"/>
+<line class="grid" x1="440" y1="188" x2="440" y2="336" stroke-width="0.5"/>
+<line class="grid" x1="620" y1="188" x2="620" y2="336" stroke-width="0.5"/>
+
+<text class="th" x="40" y="202">Fold · 140 res</text>
+<text class="ts" x="40" y="220">+0.4 GiB working</text>
+<rect x="163" y="189" width="330" height="42" rx="14" fill="#378ADD" opacity="0.13"/>
+<rect x="481" y="189" width="22" height="42" rx="10" fill="#EF9F27" opacity="0.25"/>
+<rect x="170" y="196" width="316.25" height="28" rx="6" fill="#378ADD"/>
+<rect x="488.25" y="196" width="8" height="28" rx="3" fill="#EF9F27"/>
+<rect x="488.25" y="196" width="8" height="28" rx="3" fill="url(#hatch)"/>
+<text class="t" x="640" y="210" text-anchor="end">14.5 GiB</text>
+
+<text class="th" x="40" y="254">Complexa · 512</text>
+<text class="ts" x="40" y="272">+1.6 GiB working</text>
+<rect x="163" y="241" width="330" height="42" rx="14" fill="#378ADD" opacity="0.13"/>
+<rect x="481" y="241" width="49" height="42" rx="12" fill="#EF9F27" opacity="0.25"/>
+<rect x="170" y="248" width="316.25" height="28" rx="6" fill="#378ADD"/>
+<rect x="488.25" y="248" width="35" height="28" rx="4" fill="#EF9F27"/>
+<rect x="488.25" y="248" width="35" height="28" rx="4" fill="url(#hatch)"/>
+<text class="t" x="640" y="262" text-anchor="end">15.7 GiB</text>
+
+<text class="th" x="40" y="306">Fold · 512 res</text>
+<text class="ts" x="40" y="324">+3.9 GiB working</text>
+<rect x="163" y="293" width="330" height="42" rx="14" fill="#378ADD" opacity="0.13"/>
+<rect x="481" y="293" width="101" height="42" rx="14" fill="#EF9F27" opacity="0.25"/>
+<rect x="170" y="300" width="316.25" height="28" rx="6" fill="#378ADD"/>
+<rect x="488.25" y="300" width="86.75" height="28" rx="6" fill="#EF9F27"/>
+<rect x="488.25" y="300" width="86.75" height="28" rx="6" fill="url(#hatch)"/>
+<text class="th" x="640" y="314" text-anchor="end">18.0 GiB</text>
+
+<line class="ref" x1="530" y1="186" x2="530" y2="338" stroke-width="1" stroke-dasharray="4 3"/>
+<text class="ts" x="530" y="176" text-anchor="middle">16 GiB GPU</text>
+
+<line class="grid" x1="170" y1="342" x2="620" y2="342" stroke-width="0.5"/>
+<text class="ts" x="170" y="358" text-anchor="middle">0</text>
+<text class="ts" x="260" y="358" text-anchor="middle">4</text>
+<text class="ts" x="350" y="358" text-anchor="middle">8</text>
+<text class="ts" x="440" y="358" text-anchor="middle">12</text>
+<text class="ts" x="530" y="358" text-anchor="middle">16</text>
+<text class="ts" x="620" y="358" text-anchor="middle">20 GiB</text>
+
+<rect x="170" y="383" width="12" height="12" rx="3" fill="#378ADD"/>
+<text class="ts" x="190" y="389">Model weights, loaded once</text>
+<rect x="400" y="383" width="12" height="12" rx="3" fill="#EF9F27"/>
+<rect x="400" y="383" width="12" height="12" rx="3" fill="url(#hatch)"/>
+<text class="ts" x="420" y="389">Working memory, grows with length</text>
+</svg>

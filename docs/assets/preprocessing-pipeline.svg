@@ -1,0 +1,814 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="686" viewBox="0 0 1060 686" role="img">
+<title>MUbind preprocessing in three files</title>
+<desc>download.py fetches ProstT5Dataset from Hugging Face into ProstT5Dataset/. subset.py keeps proteins of 50 to 70 residues in ProstT5Dataset_len50_70/. prepare.py computes length, charge and hydrophobicity for every protein and writes aa.npy, threedi.npy and properties.npy, padded to 128 positions, into train/, valid/ and test/ of ProstT5Dataset_len50_70_diffusion/. preprocess.py runs the three in order.</desc>
+<style>
+text { font-family: "DejaVu Sans", Verdana, "Segoe UI", sans-serif; }
+.mono, .folder, .file-name, .npy, .prop-text, .repo { font-family: "DejaVu Sans Mono", Consolas, monospace; }
+.file { fill: #f6f5f1; stroke: #d5d3ca; }
+.file-name { font-size: 13px; font-weight: 700; fill: #2b2b2b; }
+.card { fill: #ffffff; stroke: #cfcdc5; }
+.card-head { fill: #edece7; }
+.card-rule { stroke: #cfcdc5; }
+.row-rule { stroke: #efeee9; }
+.folder { font-size: 11px; font-weight: 700; fill: #2b2b2b; }
+.npy { font-size: 10px; fill: #5f6b7a; }
+.aa-ink { fill: #3b5876; }
+.di-ink { fill: #7d5f22; }
+.pad { fill: #faf9f5; stroke: #d9d7ce; stroke-width: 0.8; }
+.prop { fill: #ffffff; stroke: #b9b6ad; stroke-width: 0.8; }
+.prop-text { font-size: 9.5px; fill: #2b2b2b; text-anchor: middle; }
+.band { fill: #f1efe9; }
+.rule { stroke: #a9a9a9; stroke-dasharray: 3 3; }
+.tick { font-size: 11px; fill: #7a7a7a; text-anchor: middle; }
+.note { font-size: 12.5px; fill: #3f4752; }
+.aside { font-size: 11px; fill: #8a8a8a; }
+.count { font-size: 11.5px; fill: #5f6b7a; }
+.brand { font-size: 13px; font-weight: 700; fill: #2b2b2b; }
+.repo { font-size: 10.5px; fill: #5f6b7a; }
+.arrow { stroke: #8c8c8c; stroke-width: 1.2; }
+.head { fill: #8c8c8c; }
+.tree { fill: none; stroke: #cfcdc5; }
+.tree-dir { font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 10.5px; font-weight: 700; fill: #2b2b2b; }
+.tree-file { font-family: "DejaVu Sans Mono", Consolas, monospace; font-size: 10px; fill: #3f4752; }
+.tree-more { font-size: 10px; fill: #8a8a8a; }
+.more { font-size: 12px; fill: #8a8a8a; text-anchor: middle; }
+.split-count { font-size: 10px; fill: #8a8a8a; }
+.page { stroke: #a9a69c; stroke-width: 0.8; }
+.page-fold { fill: none; stroke: #a9a69c; stroke-width: 0.8; }
+.npy-file { fill: #ffffff; stroke: #d9d7ce; }
+.tree-file.aa-ink { fill: #3b5876; }
+.tree-file.di-ink { fill: #7d5f22; }
+
+.call { stroke: #d5d3ca; stroke-width: 1; fill: none; }
+.call-head { fill: #b9b6ad; }
+.step { fill: #ffffff; stroke: #b9b6ad; }
+.step-text { font-size: 10.5px; fill: #9a978e; }
+</style>
+<rect width="1060" height="686" fill="#ffffff"/>
+<path class="file" d="M24 85Q24 80 29 80H129.13Q134.13 80 134.13 85V108H309Q314 108 314 113V663Q314 668 309 668H29Q24 668 24 663Z"/>
+<text class="file-name" x="36" y="99">download.py</text>
+<path class="file" d="M340 85Q340 80 345 80H429.47Q434.47 80 434.47 85V108H655Q660 108 660 113V663Q660 668 655 668H345Q340 668 340 663Z"/>
+<text class="file-name" x="352" y="99">subset.py</text>
+<path class="file" d="M686 85Q686 80 691 80H783.3Q788.3 80 788.3 85V108H1031Q1036 108 1036 113V663Q1036 668 1031 668H691Q686 668 686 663Z"/>
+<text class="file-name" x="698" y="99">prepare.py</text>
+<rect class="file" x="24" y="12" width="125.79" height="26" rx="5"/>
+<text class="file-name" x="36" y="30">preprocess.py</text>
+<path class="call" d="M79.065 38V54H737.15"/>
+<line class="call" x1="79.065" y1="54" x2="79.065" y2="80"/>
+<text class="step-text" x="86.065" y="69">1</text>
+<line class="call" x1="387.235" y1="54" x2="387.235" y2="80"/>
+<text class="step-text" x="394.235" y="69">2</text>
+<line class="call" x1="737.15" y1="54" x2="737.15" y2="80"/>
+<text class="step-text" x="744.15" y="69">3</text>
+<circle cx="67" cy="154" r="21" fill="#ffd21e"/>
+<ellipse cx="59.5" cy="149" rx="2.6" ry="3.2" fill="#3a3b45"/>
+<circle cx="53.5" cy="156" r="3" fill="#ff9d0b" opacity="0.55"/>
+<ellipse cx="51" cy="170" rx="6.5" ry="4.5" fill="#ff9d0b" transform="rotate(35 51 170)"/>
+<ellipse cx="74.5" cy="149" rx="2.6" ry="3.2" fill="#3a3b45"/>
+<circle cx="80.5" cy="156" r="3" fill="#ff9d0b" opacity="0.55"/>
+<ellipse cx="83" cy="170" rx="6.5" ry="4.5" fill="#ff9d0b" transform="rotate(-35 83 170)"/>
+<path d="M59 157Q67 169 75 157Z" fill="#3a3b45"/>
+<ellipse cx="67" cy="162.3" rx="3.6" ry="2" fill="#ef4e4e"/>
+<text class="brand" x="100" y="150">Hugging Face</text>
+<text class="repo" x="100" y="166">Rostlab/ProstT5Dataset</text>
+<line class="arrow" x1="67" y1="188" x2="67" y2="340"/>
+<path class="head" d="M63 339L67 346L71 339Z"/>
+<text class="note" x="82" y="326">download proteins</text>
+<rect class="card" x="46" y="354" width="248" height="293" rx="4"/>
+<path class="card-head" d="M46 376V358Q46 354 50 354H290Q294 354 294 358V376Z"/>
+<line class="card-rule" x1="46" y1="376" x2="294" y2="376"/>
+<text class="folder" x="56" y="369">ProstT5Dataset/</text>
+<path class="tree" d="M60 398V625M60 417H69M60 593H69M60 625H69"/>
+<text class="tree-dir" x="56" y="394">data/</text>
+<path class="page" fill="#ffffff" d="M78 400H89L94 405V421H78Z"/>
+<path class="page-fold" d="M89 400V405H94"/>
+<rect x="81" y="406.5" width="8.5" height="1.8" fill="#8ea8cc"/>
+<rect x="81" y="408.3" width="8.5" height="1.8" fill="#dcae3d"/>
+<rect x="81" y="410.9" width="6.0" height="1.8" fill="#8ea8cc"/>
+<rect x="81" y="412.7" width="6.0" height="1.8" fill="#dcae3d"/>
+<rect x="81" y="415.3" width="7.5" height="1.8" fill="#8ea8cc"/>
+<rect x="81" y="417.1" width="7.5" height="1.8" fill="#dcae3d"/>
+<path class="page" fill="#ffffff" d="M75 403H86L91 408V424H75Z"/>
+<path class="page-fold" d="M86 403V408H91"/>
+<rect x="78" y="409.5" width="8.5" height="1.8" fill="#8ea8cc"/>
+<rect x="78" y="411.3" width="8.5" height="1.8" fill="#dcae3d"/>
+<rect x="78" y="413.9" width="6.0" height="1.8" fill="#8ea8cc"/>
+<rect x="78" y="415.7" width="6.0" height="1.8" fill="#dcae3d"/>
+<rect x="78" y="418.3" width="7.5" height="1.8" fill="#8ea8cc"/>
+<rect x="78" y="420.1" width="7.5" height="1.8" fill="#dcae3d"/>
+<path class="page" fill="#ffffff" d="M72 406H83L88 411V427H72Z"/>
+<path class="page-fold" d="M83 406V411H88"/>
+<rect x="75" y="412.5" width="8.5" height="1.8" fill="#8ea8cc"/>
+<rect x="75" y="414.3" width="8.5" height="1.8" fill="#dcae3d"/>
+<rect x="75" y="416.9" width="6.0" height="1.8" fill="#8ea8cc"/>
+<rect x="75" y="418.7" width="6.0" height="1.8" fill="#dcae3d"/>
+<rect x="75" y="421.3" width="7.5" height="1.8" fill="#8ea8cc"/>
+<rect x="75" y="423.1" width="7.5" height="1.8" fill="#dcae3d"/>
+<text class="tree-file" x="102" y="412">train-00000-of-00131.parquet</text>
+<text class="tree-file" x="102" y="425"><tspan class="tree-more">… </tspan>train-00130-of-00131.parquet</text>
+<text class="split-count" x="102" y="438">17,070,828 proteins</text>
+<rect class="npy-file" x="72" y="446" width="132" height="129" rx="2"/>
+<rect x="78" y="452" width="6" height="8" fill="#92aac4"/>
+<rect x="84" y="452" width="6" height="8" fill="#95acc5"/>
+<rect x="90" y="452" width="6" height="8" fill="#aabdd1"/>
+<rect x="96" y="452" width="6" height="8" fill="#becddd"/>
+<rect x="102" y="452" width="6" height="8" fill="#8ca5c0"/>
+<rect x="108" y="452" width="6" height="8" fill="#95acc5"/>
+<rect x="114" y="452" width="6" height="8" fill="#99b0c8"/>
+<rect x="120" y="452" width="6" height="8" fill="#afc1d4"/>
+<rect x="126" y="452" width="6" height="8" fill="#c5d3e1"/>
+<rect x="132" y="452" width="6" height="8" fill="#9ab1c8"/>
+<rect x="138" y="452" width="6" height="8" fill="#91a9c3"/>
+<rect x="144" y="452" width="6" height="8" fill="#c6d4e2"/>
+<path d="M84 452v8 M90 452v8 M96 452v8 M102 452v8 M108 452v8 M114 452v8 M120 452v8 M126 452v8 M132 452v8 M138 452v8 M144 452v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="78" y="452" width="72" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="78" y="461" width="6" height="8" fill="#e3c787"/>
+<rect x="84" y="461" width="6" height="8" fill="#e3c787"/>
+<rect x="90" y="461" width="6" height="8" fill="#e5ca8d"/>
+<rect x="96" y="461" width="6" height="8" fill="#e2c584"/>
+<rect x="102" y="461" width="6" height="8" fill="#e5c98c"/>
+<rect x="108" y="461" width="6" height="8" fill="#e2c482"/>
+<rect x="114" y="461" width="6" height="8" fill="#ddbc74"/>
+<rect x="120" y="461" width="6" height="8" fill="#e3c685"/>
+<rect x="126" y="461" width="6" height="8" fill="#dfbf79"/>
+<rect x="132" y="461" width="6" height="8" fill="#e0c27e"/>
+<rect x="138" y="461" width="6" height="8" fill="#e5c98b"/>
+<rect x="144" y="461" width="6" height="8" fill="#e4c98a"/>
+<path d="M84 461v8 M90 461v8 M96 461v8 M102 461v8 M108 461v8 M114 461v8 M120 461v8 M126 461v8 M132 461v8 M138 461v8 M144 461v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="78" y="461" width="72" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<line class="row-rule" x1="73" y1="471" x2="203" y2="471"/>
+<rect x="78" y="474" width="6" height="8" fill="#b0c2d5"/>
+<rect x="84" y="474" width="6" height="8" fill="#adc0d3"/>
+<rect x="90" y="474" width="6" height="8" fill="#a9bdd1"/>
+<rect x="96" y="474" width="6" height="8" fill="#98afc7"/>
+<rect x="102" y="474" width="6" height="8" fill="#c4d2e1"/>
+<rect x="108" y="474" width="6" height="8" fill="#a2b7cd"/>
+<path d="M84 474v8 M90 474v8 M96 474v8 M102 474v8 M108 474v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="78" y="474" width="36" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="78" y="483" width="6" height="8" fill="#d9b465"/>
+<rect x="84" y="483" width="6" height="8" fill="#e2c584"/>
+<rect x="90" y="483" width="6" height="8" fill="#efdcad"/>
+<rect x="96" y="483" width="6" height="8" fill="#d5ae5a"/>
+<rect x="102" y="483" width="6" height="8" fill="#dab567"/>
+<rect x="108" y="483" width="6" height="8" fill="#e8cf97"/>
+<path d="M84 483v8 M90 483v8 M96 483v8 M102 483v8 M108 483v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="78" y="483" width="36" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<line class="row-rule" x1="73" y1="493" x2="203" y2="493"/>
+<rect x="78" y="496" width="6" height="8" fill="#d1dde8"/>
+<rect x="84" y="496" width="6" height="8" fill="#c5d3e1"/>
+<rect x="90" y="496" width="6" height="8" fill="#90a8c2"/>
+<rect x="96" y="496" width="6" height="8" fill="#a0b5cc"/>
+<rect x="102" y="496" width="6" height="8" fill="#c2d1e0"/>
+<rect x="108" y="496" width="6" height="8" fill="#a2b7cd"/>
+<rect x="114" y="496" width="6" height="8" fill="#9eb4cb"/>
+<rect x="120" y="496" width="6" height="8" fill="#c7d4e2"/>
+<rect x="126" y="496" width="6" height="8" fill="#a0b5cc"/>
+<rect x="132" y="496" width="6" height="8" fill="#90a8c3"/>
+<rect x="138" y="496" width="6" height="8" fill="#9cb2ca"/>
+<path d="M84 496v8 M90 496v8 M96 496v8 M102 496v8 M108 496v8 M114 496v8 M120 496v8 M126 496v8 M132 496v8 M138 496v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="78" y="496" width="66" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="78" y="505" width="6" height="8" fill="#e4c88a"/>
+<rect x="84" y="505" width="6" height="8" fill="#e2c482"/>
+<rect x="90" y="505" width="6" height="8" fill="#e1c380"/>
+<rect x="96" y="505" width="6" height="8" fill="#e4c889"/>
+<rect x="102" y="505" width="6" height="8" fill="#e0c17c"/>
+<rect x="108" y="505" width="6" height="8" fill="#e0c17c"/>
+<rect x="114" y="505" width="6" height="8" fill="#e1c27f"/>
+<rect x="120" y="505" width="6" height="8" fill="#e1c380"/>
+<rect x="126" y="505" width="6" height="8" fill="#e1c381"/>
+<rect x="132" y="505" width="6" height="8" fill="#e5c98b"/>
+<rect x="138" y="505" width="6" height="8" fill="#e4c889"/>
+<path d="M84 505v8 M90 505v8 M96 505v8 M102 505v8 M108 505v8 M114 505v8 M120 505v8 M126 505v8 M132 505v8 M138 505v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="78" y="505" width="66" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<line class="row-rule" x1="73" y1="515" x2="203" y2="515"/>
+<rect x="78" y="518" width="6" height="8" fill="#92aac4"/>
+<rect x="84" y="518" width="6" height="8" fill="#acbfd3"/>
+<rect x="90" y="518" width="6" height="8" fill="#86a0bd"/>
+<rect x="96" y="518" width="6" height="8" fill="#7895b5"/>
+<rect x="102" y="518" width="6" height="8" fill="#7593b3"/>
+<rect x="108" y="518" width="6" height="8" fill="#9fb5cb"/>
+<rect x="114" y="518" width="6" height="8" fill="#a9bcd1"/>
+<rect x="120" y="518" width="6" height="8" fill="#9eb4cb"/>
+<rect x="126" y="518" width="6" height="8" fill="#819cba"/>
+<rect x="132" y="518" width="6" height="8" fill="#8da6c1"/>
+<rect x="138" y="518" width="6" height="8" fill="#a7bbd0"/>
+<rect x="144" y="518" width="6" height="8" fill="#c9d6e3"/>
+<rect x="150" y="518" width="6" height="8" fill="#b1c3d5"/>
+<rect x="156" y="518" width="6" height="8" fill="#b7c8d9"/>
+<rect x="162" y="518" width="6" height="8" fill="#bdccdc"/>
+<rect x="168" y="518" width="6" height="8" fill="#97adc6"/>
+<rect x="174" y="518" width="6" height="8" fill="#9eb4cb"/>
+<rect x="180" y="518" width="6" height="8" fill="#abbed2"/>
+<rect x="186" y="518" width="6" height="8" fill="#aec1d4"/>
+<rect x="192" y="518" width="6" height="8" fill="#a0b5cc"/>
+<path d="M84 518v8 M90 518v8 M96 518v8 M102 518v8 M108 518v8 M114 518v8 M120 518v8 M126 518v8 M132 518v8 M138 518v8 M144 518v8 M150 518v8 M156 518v8 M162 518v8 M168 518v8 M174 518v8 M180 518v8 M186 518v8 M192 518v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="78" y="518" width="120" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="78" y="527" width="6" height="8" fill="#dbb86d"/>
+<rect x="84" y="527" width="6" height="8" fill="#dab567"/>
+<rect x="90" y="527" width="6" height="8" fill="#edd9a8"/>
+<rect x="96" y="527" width="6" height="8" fill="#ead29c"/>
+<rect x="102" y="527" width="6" height="8" fill="#e0c17d"/>
+<rect x="108" y="527" width="6" height="8" fill="#debd76"/>
+<rect x="114" y="527" width="6" height="8" fill="#d9b464"/>
+<rect x="120" y="527" width="6" height="8" fill="#dcba70"/>
+<rect x="126" y="527" width="6" height="8" fill="#e7ce95"/>
+<rect x="132" y="527" width="6" height="8" fill="#e0c27e"/>
+<rect x="138" y="527" width="6" height="8" fill="#dfbf79"/>
+<rect x="144" y="527" width="6" height="8" fill="#e3c788"/>
+<rect x="150" y="527" width="6" height="8" fill="#e7ce94"/>
+<rect x="156" y="527" width="6" height="8" fill="#d8b262"/>
+<rect x="162" y="527" width="6" height="8" fill="#e9d19a"/>
+<rect x="168" y="527" width="6" height="8" fill="#dfbf78"/>
+<rect x="174" y="527" width="6" height="8" fill="#efddaf"/>
+<rect x="180" y="527" width="6" height="8" fill="#e0c17d"/>
+<rect x="186" y="527" width="6" height="8" fill="#dab668"/>
+<rect x="192" y="527" width="6" height="8" fill="#d4ac56"/>
+<path d="M84 527v8 M90 527v8 M96 527v8 M102 527v8 M108 527v8 M114 527v8 M120 527v8 M126 527v8 M132 527v8 M138 527v8 M144 527v8 M150 527v8 M156 527v8 M162 527v8 M168 527v8 M174 527v8 M180 527v8 M186 527v8 M192 527v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="78" y="527" width="120" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<line class="row-rule" x1="73" y1="537" x2="203" y2="537"/>
+<rect x="78" y="540" width="6" height="8" fill="#90a8c2"/>
+<rect x="84" y="540" width="6" height="8" fill="#9bb1c9"/>
+<rect x="90" y="540" width="6" height="8" fill="#b6c7d9"/>
+<rect x="96" y="540" width="6" height="8" fill="#c3d1e0"/>
+<rect x="102" y="540" width="6" height="8" fill="#a3b7cd"/>
+<rect x="108" y="540" width="6" height="8" fill="#9fb4cb"/>
+<rect x="114" y="540" width="6" height="8" fill="#becddd"/>
+<rect x="120" y="540" width="6" height="8" fill="#99afc7"/>
+<rect x="126" y="540" width="6" height="8" fill="#aec0d4"/>
+<rect x="132" y="540" width="6" height="8" fill="#c1d0df"/>
+<rect x="138" y="540" width="6" height="8" fill="#bfcedd"/>
+<rect x="144" y="540" width="6" height="8" fill="#aabdd1"/>
+<rect x="150" y="540" width="6" height="8" fill="#c7d5e2"/>
+<path d="M84 540v8 M90 540v8 M96 540v8 M102 540v8 M108 540v8 M114 540v8 M120 540v8 M126 540v8 M132 540v8 M138 540v8 M144 540v8 M150 540v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="78" y="540" width="78" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="78" y="549" width="6" height="8" fill="#e1c27e"/>
+<rect x="84" y="549" width="6" height="8" fill="#e3c788"/>
+<rect x="90" y="549" width="6" height="8" fill="#e4c88a"/>
+<rect x="96" y="549" width="6" height="8" fill="#e2c583"/>
+<rect x="102" y="549" width="6" height="8" fill="#e4c889"/>
+<rect x="108" y="549" width="6" height="8" fill="#e0c17d"/>
+<rect x="114" y="549" width="6" height="8" fill="#e1c381"/>
+<rect x="120" y="549" width="6" height="8" fill="#e0c17c"/>
+<rect x="126" y="549" width="6" height="8" fill="#e3c685"/>
+<rect x="132" y="549" width="6" height="8" fill="#e6cb8f"/>
+<rect x="138" y="549" width="6" height="8" fill="#e2c482"/>
+<rect x="144" y="549" width="6" height="8" fill="#debd76"/>
+<rect x="150" y="549" width="6" height="8" fill="#e0c17c"/>
+<path d="M84 549v8 M90 549v8 M96 549v8 M102 549v8 M108 549v8 M114 549v8 M120 549v8 M126 549v8 M132 549v8 M138 549v8 M144 549v8 M150 549v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="78" y="549" width="78" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<text class="more" x="98" y="569">⋮</text>
+<path class="page" fill="#ffffff" d="M72 583H83L88 588V604H72Z"/>
+<path class="page-fold" d="M83 583V588H88"/>
+<rect x="75" y="589.5" width="8.5" height="1.8" fill="#8ea8cc"/>
+<rect x="75" y="591.3" width="8.5" height="1.8" fill="#dcae3d"/>
+<rect x="75" y="593.9" width="6.0" height="1.8" fill="#8ea8cc"/>
+<rect x="75" y="595.6999999999999" width="6.0" height="1.8" fill="#dcae3d"/>
+<rect x="75" y="598.3" width="7.5" height="1.8" fill="#8ea8cc"/>
+<rect x="75" y="600.0999999999999" width="7.5" height="1.8" fill="#dcae3d"/>
+<text class="tree-file" x="102" y="593">valid-00000-of-00001.parquet</text>
+<text class="split-count" x="102" y="605">474 proteins</text>
+<path class="page" fill="#ffffff" d="M72 615H83L88 620V636H72Z"/>
+<path class="page-fold" d="M83 615V620H88"/>
+<rect x="75" y="621.5" width="8.5" height="1.8" fill="#8ea8cc"/>
+<rect x="75" y="623.3" width="8.5" height="1.8" fill="#dcae3d"/>
+<rect x="75" y="625.9" width="6.0" height="1.8" fill="#8ea8cc"/>
+<rect x="75" y="627.6999999999999" width="6.0" height="1.8" fill="#dcae3d"/>
+<rect x="75" y="630.3" width="7.5" height="1.8" fill="#8ea8cc"/>
+<rect x="75" y="632.0999999999999" width="7.5" height="1.8" fill="#dcae3d"/>
+<text class="tree-file" x="102" y="625">test-00000-of-00001.parquet</text>
+<text class="split-count" x="102" y="637">474 proteins</text>
+<rect class="card" x="362" y="130" width="140" height="159" rx="4"/>
+<path class="card-head" d="M362 152V134Q362 130 366 130H498Q502 130 502 134V152Z"/>
+<line class="card-rule" x1="362" y1="152" x2="502" y2="152"/>
+<text class="folder" x="372" y="145">ProstT5Dataset/</text>
+<rect class="band" x="432" y="152" width="24" height="137"/>
+<line class="rule" x1="432" y1="152" x2="432" y2="293"/>
+<text class="tick" x="432" y="305">50</text>
+<line class="rule" x1="456" y1="152" x2="456" y2="293"/>
+<text class="tick" x="456" y="305">70</text>
+<rect x="372" y="162" width="6" height="8" fill="#92aac4"/>
+<rect x="378" y="162" width="6" height="8" fill="#95acc5"/>
+<rect x="384" y="162" width="6" height="8" fill="#aabdd1"/>
+<rect x="390" y="162" width="6" height="8" fill="#becddd"/>
+<rect x="396" y="162" width="6" height="8" fill="#8ca5c0"/>
+<rect x="402" y="162" width="6" height="8" fill="#95acc5"/>
+<rect x="408" y="162" width="6" height="8" fill="#99b0c8"/>
+<rect x="414" y="162" width="6" height="8" fill="#afc1d4"/>
+<rect x="420" y="162" width="6" height="8" fill="#c5d3e1"/>
+<rect x="426" y="162" width="6" height="8" fill="#9ab1c8"/>
+<rect x="432" y="162" width="6" height="8" fill="#91a9c3"/>
+<rect x="438" y="162" width="6" height="8" fill="#c6d4e2"/>
+<path d="M378 162v8 M384 162v8 M390 162v8 M396 162v8 M402 162v8 M408 162v8 M414 162v8 M420 162v8 M426 162v8 M432 162v8 M438 162v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="372" y="162" width="72" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="372" y="171" width="6" height="8" fill="#e3c787"/>
+<rect x="378" y="171" width="6" height="8" fill="#e3c787"/>
+<rect x="384" y="171" width="6" height="8" fill="#e5ca8d"/>
+<rect x="390" y="171" width="6" height="8" fill="#e2c584"/>
+<rect x="396" y="171" width="6" height="8" fill="#e5c98c"/>
+<rect x="402" y="171" width="6" height="8" fill="#e2c482"/>
+<rect x="408" y="171" width="6" height="8" fill="#ddbc74"/>
+<rect x="414" y="171" width="6" height="8" fill="#e3c685"/>
+<rect x="420" y="171" width="6" height="8" fill="#dfbf79"/>
+<rect x="426" y="171" width="6" height="8" fill="#e0c27e"/>
+<rect x="432" y="171" width="6" height="8" fill="#e5c98b"/>
+<rect x="438" y="171" width="6" height="8" fill="#e4c98a"/>
+<path d="M378 171v8 M384 171v8 M390 171v8 M396 171v8 M402 171v8 M408 171v8 M414 171v8 M420 171v8 M426 171v8 M432 171v8 M438 171v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="372" y="171" width="72" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<line class="row-rule" x1="363" y1="181" x2="501" y2="181"/>
+<g opacity="0.28">
+<rect x="372" y="184" width="6" height="8" fill="#b0c2d5"/>
+<rect x="378" y="184" width="6" height="8" fill="#adc0d3"/>
+<rect x="384" y="184" width="6" height="8" fill="#a9bdd1"/>
+<rect x="390" y="184" width="6" height="8" fill="#98afc7"/>
+<rect x="396" y="184" width="6" height="8" fill="#c4d2e1"/>
+<rect x="402" y="184" width="6" height="8" fill="#a2b7cd"/>
+<path d="M378 184v8 M384 184v8 M390 184v8 M396 184v8 M402 184v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="372" y="184" width="36" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="372" y="193" width="6" height="8" fill="#d9b465"/>
+<rect x="378" y="193" width="6" height="8" fill="#e2c584"/>
+<rect x="384" y="193" width="6" height="8" fill="#efdcad"/>
+<rect x="390" y="193" width="6" height="8" fill="#d5ae5a"/>
+<rect x="396" y="193" width="6" height="8" fill="#dab567"/>
+<rect x="402" y="193" width="6" height="8" fill="#e8cf97"/>
+<path d="M378 193v8 M384 193v8 M390 193v8 M396 193v8 M402 193v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="372" y="193" width="36" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+</g>
+<line class="row-rule" x1="363" y1="203" x2="501" y2="203"/>
+<rect x="372" y="206" width="6" height="8" fill="#d1dde8"/>
+<rect x="378" y="206" width="6" height="8" fill="#c5d3e1"/>
+<rect x="384" y="206" width="6" height="8" fill="#90a8c2"/>
+<rect x="390" y="206" width="6" height="8" fill="#a0b5cc"/>
+<rect x="396" y="206" width="6" height="8" fill="#c2d1e0"/>
+<rect x="402" y="206" width="6" height="8" fill="#a2b7cd"/>
+<rect x="408" y="206" width="6" height="8" fill="#9eb4cb"/>
+<rect x="414" y="206" width="6" height="8" fill="#c7d4e2"/>
+<rect x="420" y="206" width="6" height="8" fill="#a0b5cc"/>
+<rect x="426" y="206" width="6" height="8" fill="#90a8c3"/>
+<rect x="432" y="206" width="6" height="8" fill="#9cb2ca"/>
+<path d="M378 206v8 M384 206v8 M390 206v8 M396 206v8 M402 206v8 M408 206v8 M414 206v8 M420 206v8 M426 206v8 M432 206v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="372" y="206" width="66" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="372" y="215" width="6" height="8" fill="#e4c88a"/>
+<rect x="378" y="215" width="6" height="8" fill="#e2c482"/>
+<rect x="384" y="215" width="6" height="8" fill="#e1c380"/>
+<rect x="390" y="215" width="6" height="8" fill="#e4c889"/>
+<rect x="396" y="215" width="6" height="8" fill="#e0c17c"/>
+<rect x="402" y="215" width="6" height="8" fill="#e0c17c"/>
+<rect x="408" y="215" width="6" height="8" fill="#e1c27f"/>
+<rect x="414" y="215" width="6" height="8" fill="#e1c380"/>
+<rect x="420" y="215" width="6" height="8" fill="#e1c381"/>
+<rect x="426" y="215" width="6" height="8" fill="#e5c98b"/>
+<rect x="432" y="215" width="6" height="8" fill="#e4c889"/>
+<path d="M378 215v8 M384 215v8 M390 215v8 M396 215v8 M402 215v8 M408 215v8 M414 215v8 M420 215v8 M426 215v8 M432 215v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="372" y="215" width="66" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<line class="row-rule" x1="363" y1="225" x2="501" y2="225"/>
+<g opacity="0.28">
+<rect x="372" y="228" width="6" height="8" fill="#92aac4"/>
+<rect x="378" y="228" width="6" height="8" fill="#acbfd3"/>
+<rect x="384" y="228" width="6" height="8" fill="#86a0bd"/>
+<rect x="390" y="228" width="6" height="8" fill="#7895b5"/>
+<rect x="396" y="228" width="6" height="8" fill="#7593b3"/>
+<rect x="402" y="228" width="6" height="8" fill="#9fb5cb"/>
+<rect x="408" y="228" width="6" height="8" fill="#a9bcd1"/>
+<rect x="414" y="228" width="6" height="8" fill="#9eb4cb"/>
+<rect x="420" y="228" width="6" height="8" fill="#819cba"/>
+<rect x="426" y="228" width="6" height="8" fill="#8da6c1"/>
+<rect x="432" y="228" width="6" height="8" fill="#a7bbd0"/>
+<rect x="438" y="228" width="6" height="8" fill="#c9d6e3"/>
+<rect x="444" y="228" width="6" height="8" fill="#b1c3d5"/>
+<rect x="450" y="228" width="6" height="8" fill="#b7c8d9"/>
+<rect x="456" y="228" width="6" height="8" fill="#bdccdc"/>
+<rect x="462" y="228" width="6" height="8" fill="#97adc6"/>
+<rect x="468" y="228" width="6" height="8" fill="#9eb4cb"/>
+<rect x="474" y="228" width="6" height="8" fill="#abbed2"/>
+<rect x="480" y="228" width="6" height="8" fill="#aec1d4"/>
+<rect x="486" y="228" width="6" height="8" fill="#a0b5cc"/>
+<path d="M378 228v8 M384 228v8 M390 228v8 M396 228v8 M402 228v8 M408 228v8 M414 228v8 M420 228v8 M426 228v8 M432 228v8 M438 228v8 M444 228v8 M450 228v8 M456 228v8 M462 228v8 M468 228v8 M474 228v8 M480 228v8 M486 228v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="372" y="228" width="120" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="372" y="237" width="6" height="8" fill="#dbb86d"/>
+<rect x="378" y="237" width="6" height="8" fill="#dab567"/>
+<rect x="384" y="237" width="6" height="8" fill="#edd9a8"/>
+<rect x="390" y="237" width="6" height="8" fill="#ead29c"/>
+<rect x="396" y="237" width="6" height="8" fill="#e0c17d"/>
+<rect x="402" y="237" width="6" height="8" fill="#debd76"/>
+<rect x="408" y="237" width="6" height="8" fill="#d9b464"/>
+<rect x="414" y="237" width="6" height="8" fill="#dcba70"/>
+<rect x="420" y="237" width="6" height="8" fill="#e7ce95"/>
+<rect x="426" y="237" width="6" height="8" fill="#e0c27e"/>
+<rect x="432" y="237" width="6" height="8" fill="#dfbf79"/>
+<rect x="438" y="237" width="6" height="8" fill="#e3c788"/>
+<rect x="444" y="237" width="6" height="8" fill="#e7ce94"/>
+<rect x="450" y="237" width="6" height="8" fill="#d8b262"/>
+<rect x="456" y="237" width="6" height="8" fill="#e9d19a"/>
+<rect x="462" y="237" width="6" height="8" fill="#dfbf78"/>
+<rect x="468" y="237" width="6" height="8" fill="#efddaf"/>
+<rect x="474" y="237" width="6" height="8" fill="#e0c17d"/>
+<rect x="480" y="237" width="6" height="8" fill="#dab668"/>
+<rect x="486" y="237" width="6" height="8" fill="#d4ac56"/>
+<path d="M378 237v8 M384 237v8 M390 237v8 M396 237v8 M402 237v8 M408 237v8 M414 237v8 M420 237v8 M426 237v8 M432 237v8 M438 237v8 M444 237v8 M450 237v8 M456 237v8 M462 237v8 M468 237v8 M474 237v8 M480 237v8 M486 237v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="372" y="237" width="120" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+</g>
+<line class="row-rule" x1="363" y1="247" x2="501" y2="247"/>
+<rect x="372" y="250" width="6" height="8" fill="#90a8c2"/>
+<rect x="378" y="250" width="6" height="8" fill="#9bb1c9"/>
+<rect x="384" y="250" width="6" height="8" fill="#b6c7d9"/>
+<rect x="390" y="250" width="6" height="8" fill="#c3d1e0"/>
+<rect x="396" y="250" width="6" height="8" fill="#a3b7cd"/>
+<rect x="402" y="250" width="6" height="8" fill="#9fb4cb"/>
+<rect x="408" y="250" width="6" height="8" fill="#becddd"/>
+<rect x="414" y="250" width="6" height="8" fill="#99afc7"/>
+<rect x="420" y="250" width="6" height="8" fill="#aec0d4"/>
+<rect x="426" y="250" width="6" height="8" fill="#c1d0df"/>
+<rect x="432" y="250" width="6" height="8" fill="#bfcedd"/>
+<rect x="438" y="250" width="6" height="8" fill="#aabdd1"/>
+<rect x="444" y="250" width="6" height="8" fill="#c7d5e2"/>
+<path d="M378 250v8 M384 250v8 M390 250v8 M396 250v8 M402 250v8 M408 250v8 M414 250v8 M420 250v8 M426 250v8 M432 250v8 M438 250v8 M444 250v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="372" y="250" width="78" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="372" y="259" width="6" height="8" fill="#e1c27e"/>
+<rect x="378" y="259" width="6" height="8" fill="#e3c788"/>
+<rect x="384" y="259" width="6" height="8" fill="#e4c88a"/>
+<rect x="390" y="259" width="6" height="8" fill="#e2c583"/>
+<rect x="396" y="259" width="6" height="8" fill="#e4c889"/>
+<rect x="402" y="259" width="6" height="8" fill="#e0c17d"/>
+<rect x="408" y="259" width="6" height="8" fill="#e1c381"/>
+<rect x="414" y="259" width="6" height="8" fill="#e0c17c"/>
+<rect x="420" y="259" width="6" height="8" fill="#e3c685"/>
+<rect x="426" y="259" width="6" height="8" fill="#e6cb8f"/>
+<rect x="432" y="259" width="6" height="8" fill="#e2c482"/>
+<rect x="438" y="259" width="6" height="8" fill="#debd76"/>
+<rect x="444" y="259" width="6" height="8" fill="#e0c17c"/>
+<path d="M378 259v8 M384 259v8 M390 259v8 M396 259v8 M402 259v8 M408 259v8 M414 259v8 M420 259v8 M426 259v8 M432 259v8 M438 259v8 M444 259v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="372" y="259" width="78" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<text class="more" x="402" y="279">⋮</text>
+<text class="aside" x="512" y="196">too short</text>
+<text class="aside" x="512" y="240">too long</text>
+<line class="arrow" x1="383" y1="299" x2="383" y2="340"/>
+<path class="head" d="M379 339L383 346L387 339Z"/>
+<text class="note" x="398" y="326">filter by length</text>
+<rect class="card" x="362" y="354" width="248" height="249" rx="4"/>
+<path class="card-head" d="M362 376V358Q362 354 366 354H606Q610 354 610 358V376Z"/>
+<line class="card-rule" x1="362" y1="376" x2="610" y2="376"/>
+<text class="folder" x="372" y="369">ProstT5Dataset_len50_70/</text>
+<path class="tree" d="M376 398V581M376 417H385M376 549H385M376 581H385"/>
+<text class="tree-dir" x="372" y="394">data/</text>
+<path class="page" fill="#ffffff" d="M394 400H405L410 405V421H394Z"/>
+<path class="page-fold" d="M405 400V405H410"/>
+<rect x="397" y="406.5" width="8.5" height="1.8" fill="#8ea8cc"/>
+<rect x="397" y="408.3" width="8.5" height="1.8" fill="#dcae3d"/>
+<rect x="397" y="410.9" width="6.0" height="1.8" fill="#8ea8cc"/>
+<rect x="397" y="412.7" width="6.0" height="1.8" fill="#dcae3d"/>
+<rect x="397" y="415.3" width="7.5" height="1.8" fill="#8ea8cc"/>
+<rect x="397" y="417.1" width="7.5" height="1.8" fill="#dcae3d"/>
+<path class="page" fill="#ffffff" d="M391 403H402L407 408V424H391Z"/>
+<path class="page-fold" d="M402 403V408H407"/>
+<rect x="394" y="409.5" width="8.5" height="1.8" fill="#8ea8cc"/>
+<rect x="394" y="411.3" width="8.5" height="1.8" fill="#dcae3d"/>
+<rect x="394" y="413.9" width="6.0" height="1.8" fill="#8ea8cc"/>
+<rect x="394" y="415.7" width="6.0" height="1.8" fill="#dcae3d"/>
+<rect x="394" y="418.3" width="7.5" height="1.8" fill="#8ea8cc"/>
+<rect x="394" y="420.1" width="7.5" height="1.8" fill="#dcae3d"/>
+<path class="page" fill="#ffffff" d="M388 406H399L404 411V427H388Z"/>
+<path class="page-fold" d="M399 406V411H404"/>
+<rect x="391" y="412.5" width="8.5" height="1.8" fill="#8ea8cc"/>
+<rect x="391" y="414.3" width="8.5" height="1.8" fill="#dcae3d"/>
+<rect x="391" y="416.9" width="6.0" height="1.8" fill="#8ea8cc"/>
+<rect x="391" y="418.7" width="6.0" height="1.8" fill="#dcae3d"/>
+<rect x="391" y="421.3" width="7.5" height="1.8" fill="#8ea8cc"/>
+<rect x="391" y="423.1" width="7.5" height="1.8" fill="#dcae3d"/>
+<text class="tree-file" x="418" y="412">train-00000-of-00131.parquet</text>
+<text class="tree-file" x="418" y="425"><tspan class="tree-more">… </tspan>train-00130-of-00131.parquet</text>
+<text class="split-count" x="418" y="438">1,505,527 proteins</text>
+<rect class="npy-file" x="388" y="446" width="132" height="85" rx="2"/>
+<rect x="394" y="452" width="6" height="8" fill="#92aac4"/>
+<rect x="400" y="452" width="6" height="8" fill="#95acc5"/>
+<rect x="406" y="452" width="6" height="8" fill="#aabdd1"/>
+<rect x="412" y="452" width="6" height="8" fill="#becddd"/>
+<rect x="418" y="452" width="6" height="8" fill="#8ca5c0"/>
+<rect x="424" y="452" width="6" height="8" fill="#95acc5"/>
+<rect x="430" y="452" width="6" height="8" fill="#99b0c8"/>
+<rect x="436" y="452" width="6" height="8" fill="#afc1d4"/>
+<rect x="442" y="452" width="6" height="8" fill="#c5d3e1"/>
+<rect x="448" y="452" width="6" height="8" fill="#9ab1c8"/>
+<rect x="454" y="452" width="6" height="8" fill="#91a9c3"/>
+<rect x="460" y="452" width="6" height="8" fill="#c6d4e2"/>
+<path d="M400 452v8 M406 452v8 M412 452v8 M418 452v8 M424 452v8 M430 452v8 M436 452v8 M442 452v8 M448 452v8 M454 452v8 M460 452v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="394" y="452" width="72" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="394" y="461" width="6" height="8" fill="#e3c787"/>
+<rect x="400" y="461" width="6" height="8" fill="#e3c787"/>
+<rect x="406" y="461" width="6" height="8" fill="#e5ca8d"/>
+<rect x="412" y="461" width="6" height="8" fill="#e2c584"/>
+<rect x="418" y="461" width="6" height="8" fill="#e5c98c"/>
+<rect x="424" y="461" width="6" height="8" fill="#e2c482"/>
+<rect x="430" y="461" width="6" height="8" fill="#ddbc74"/>
+<rect x="436" y="461" width="6" height="8" fill="#e3c685"/>
+<rect x="442" y="461" width="6" height="8" fill="#dfbf79"/>
+<rect x="448" y="461" width="6" height="8" fill="#e0c27e"/>
+<rect x="454" y="461" width="6" height="8" fill="#e5c98b"/>
+<rect x="460" y="461" width="6" height="8" fill="#e4c98a"/>
+<path d="M400 461v8 M406 461v8 M412 461v8 M418 461v8 M424 461v8 M430 461v8 M436 461v8 M442 461v8 M448 461v8 M454 461v8 M460 461v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="394" y="461" width="72" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<line class="row-rule" x1="389" y1="471" x2="519" y2="471"/>
+<rect x="394" y="474" width="6" height="8" fill="#d1dde8"/>
+<rect x="400" y="474" width="6" height="8" fill="#c5d3e1"/>
+<rect x="406" y="474" width="6" height="8" fill="#90a8c2"/>
+<rect x="412" y="474" width="6" height="8" fill="#a0b5cc"/>
+<rect x="418" y="474" width="6" height="8" fill="#c2d1e0"/>
+<rect x="424" y="474" width="6" height="8" fill="#a2b7cd"/>
+<rect x="430" y="474" width="6" height="8" fill="#9eb4cb"/>
+<rect x="436" y="474" width="6" height="8" fill="#c7d4e2"/>
+<rect x="442" y="474" width="6" height="8" fill="#a0b5cc"/>
+<rect x="448" y="474" width="6" height="8" fill="#90a8c3"/>
+<rect x="454" y="474" width="6" height="8" fill="#9cb2ca"/>
+<path d="M400 474v8 M406 474v8 M412 474v8 M418 474v8 M424 474v8 M430 474v8 M436 474v8 M442 474v8 M448 474v8 M454 474v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="394" y="474" width="66" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="394" y="483" width="6" height="8" fill="#e4c88a"/>
+<rect x="400" y="483" width="6" height="8" fill="#e2c482"/>
+<rect x="406" y="483" width="6" height="8" fill="#e1c380"/>
+<rect x="412" y="483" width="6" height="8" fill="#e4c889"/>
+<rect x="418" y="483" width="6" height="8" fill="#e0c17c"/>
+<rect x="424" y="483" width="6" height="8" fill="#e0c17c"/>
+<rect x="430" y="483" width="6" height="8" fill="#e1c27f"/>
+<rect x="436" y="483" width="6" height="8" fill="#e1c380"/>
+<rect x="442" y="483" width="6" height="8" fill="#e1c381"/>
+<rect x="448" y="483" width="6" height="8" fill="#e5c98b"/>
+<rect x="454" y="483" width="6" height="8" fill="#e4c889"/>
+<path d="M400 483v8 M406 483v8 M412 483v8 M418 483v8 M424 483v8 M430 483v8 M436 483v8 M442 483v8 M448 483v8 M454 483v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="394" y="483" width="66" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<line class="row-rule" x1="389" y1="493" x2="519" y2="493"/>
+<rect x="394" y="496" width="6" height="8" fill="#90a8c2"/>
+<rect x="400" y="496" width="6" height="8" fill="#9bb1c9"/>
+<rect x="406" y="496" width="6" height="8" fill="#b6c7d9"/>
+<rect x="412" y="496" width="6" height="8" fill="#c3d1e0"/>
+<rect x="418" y="496" width="6" height="8" fill="#a3b7cd"/>
+<rect x="424" y="496" width="6" height="8" fill="#9fb4cb"/>
+<rect x="430" y="496" width="6" height="8" fill="#becddd"/>
+<rect x="436" y="496" width="6" height="8" fill="#99afc7"/>
+<rect x="442" y="496" width="6" height="8" fill="#aec0d4"/>
+<rect x="448" y="496" width="6" height="8" fill="#c1d0df"/>
+<rect x="454" y="496" width="6" height="8" fill="#bfcedd"/>
+<rect x="460" y="496" width="6" height="8" fill="#aabdd1"/>
+<rect x="466" y="496" width="6" height="8" fill="#c7d5e2"/>
+<path d="M400 496v8 M406 496v8 M412 496v8 M418 496v8 M424 496v8 M430 496v8 M436 496v8 M442 496v8 M448 496v8 M454 496v8 M460 496v8 M466 496v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="394" y="496" width="78" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="394" y="505" width="6" height="8" fill="#e1c27e"/>
+<rect x="400" y="505" width="6" height="8" fill="#e3c788"/>
+<rect x="406" y="505" width="6" height="8" fill="#e4c88a"/>
+<rect x="412" y="505" width="6" height="8" fill="#e2c583"/>
+<rect x="418" y="505" width="6" height="8" fill="#e4c889"/>
+<rect x="424" y="505" width="6" height="8" fill="#e0c17d"/>
+<rect x="430" y="505" width="6" height="8" fill="#e1c381"/>
+<rect x="436" y="505" width="6" height="8" fill="#e0c17c"/>
+<rect x="442" y="505" width="6" height="8" fill="#e3c685"/>
+<rect x="448" y="505" width="6" height="8" fill="#e6cb8f"/>
+<rect x="454" y="505" width="6" height="8" fill="#e2c482"/>
+<rect x="460" y="505" width="6" height="8" fill="#debd76"/>
+<rect x="466" y="505" width="6" height="8" fill="#e0c17c"/>
+<path d="M400 505v8 M406 505v8 M412 505v8 M418 505v8 M424 505v8 M430 505v8 M436 505v8 M442 505v8 M448 505v8 M454 505v8 M460 505v8 M466 505v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="394" y="505" width="78" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<text class="more" x="414" y="525">⋮</text>
+<path class="page" fill="#ffffff" d="M388 539H399L404 544V560H388Z"/>
+<path class="page-fold" d="M399 539V544H404"/>
+<rect x="391" y="545.5" width="8.5" height="1.8" fill="#8ea8cc"/>
+<rect x="391" y="547.3" width="8.5" height="1.8" fill="#dcae3d"/>
+<rect x="391" y="549.9" width="6.0" height="1.8" fill="#8ea8cc"/>
+<rect x="391" y="551.6999999999999" width="6.0" height="1.8" fill="#dcae3d"/>
+<rect x="391" y="554.3" width="7.5" height="1.8" fill="#8ea8cc"/>
+<rect x="391" y="556.0999999999999" width="7.5" height="1.8" fill="#dcae3d"/>
+<text class="tree-file" x="418" y="549">valid-00000-of-00001.parquet</text>
+<text class="split-count" x="418" y="561">100 proteins</text>
+<path class="page" fill="#ffffff" d="M388 571H399L404 576V592H388Z"/>
+<path class="page-fold" d="M399 571V576H404"/>
+<rect x="391" y="577.5" width="8.5" height="1.8" fill="#8ea8cc"/>
+<rect x="391" y="579.3" width="8.5" height="1.8" fill="#dcae3d"/>
+<rect x="391" y="581.9" width="6.0" height="1.8" fill="#8ea8cc"/>
+<rect x="391" y="583.6999999999999" width="6.0" height="1.8" fill="#dcae3d"/>
+<rect x="391" y="586.3" width="7.5" height="1.8" fill="#8ea8cc"/>
+<rect x="391" y="588.0999999999999" width="7.5" height="1.8" fill="#dcae3d"/>
+<text class="tree-file" x="418" y="581">test-00000-of-00001.parquet</text>
+<text class="split-count" x="418" y="593">92 proteins</text>
+<rect class="card" x="708" y="130" width="186" height="115" rx="4"/>
+<path class="card-head" d="M708 152V134Q708 130 712 130H890Q894 130 894 134V152Z"/>
+<line class="card-rule" x1="708" y1="152" x2="894" y2="152"/>
+<text class="folder" x="718" y="145">ProstT5Dataset_len50_70/</text>
+<rect x="718" y="162" width="6" height="8" fill="#92aac4"/>
+<rect x="724" y="162" width="6" height="8" fill="#95acc5"/>
+<rect x="730" y="162" width="6" height="8" fill="#aabdd1"/>
+<rect x="736" y="162" width="6" height="8" fill="#becddd"/>
+<rect x="742" y="162" width="6" height="8" fill="#8ca5c0"/>
+<rect x="748" y="162" width="6" height="8" fill="#95acc5"/>
+<rect x="754" y="162" width="6" height="8" fill="#99b0c8"/>
+<rect x="760" y="162" width="6" height="8" fill="#afc1d4"/>
+<rect x="766" y="162" width="6" height="8" fill="#c5d3e1"/>
+<rect x="772" y="162" width="6" height="8" fill="#9ab1c8"/>
+<rect x="778" y="162" width="6" height="8" fill="#91a9c3"/>
+<rect x="784" y="162" width="6" height="8" fill="#c6d4e2"/>
+<path d="M724 162v8 M730 162v8 M736 162v8 M742 162v8 M748 162v8 M754 162v8 M760 162v8 M766 162v8 M772 162v8 M778 162v8 M784 162v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="718" y="162" width="72" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="718" y="171" width="6" height="8" fill="#e3c787"/>
+<rect x="724" y="171" width="6" height="8" fill="#e3c787"/>
+<rect x="730" y="171" width="6" height="8" fill="#e5ca8d"/>
+<rect x="736" y="171" width="6" height="8" fill="#e2c584"/>
+<rect x="742" y="171" width="6" height="8" fill="#e5c98c"/>
+<rect x="748" y="171" width="6" height="8" fill="#e2c482"/>
+<rect x="754" y="171" width="6" height="8" fill="#ddbc74"/>
+<rect x="760" y="171" width="6" height="8" fill="#e3c685"/>
+<rect x="766" y="171" width="6" height="8" fill="#dfbf79"/>
+<rect x="772" y="171" width="6" height="8" fill="#e0c27e"/>
+<rect x="778" y="171" width="6" height="8" fill="#e5c98b"/>
+<rect x="784" y="171" width="6" height="8" fill="#e4c98a"/>
+<path d="M724 171v8 M730 171v8 M736 171v8 M742 171v8 M748 171v8 M754 171v8 M760 171v8 M766 171v8 M772 171v8 M778 171v8 M784 171v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="718" y="171" width="72" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<line class="row-rule" x1="709" y1="181" x2="893" y2="181"/>
+<rect x="718" y="184" width="6" height="8" fill="#d1dde8"/>
+<rect x="724" y="184" width="6" height="8" fill="#c5d3e1"/>
+<rect x="730" y="184" width="6" height="8" fill="#90a8c2"/>
+<rect x="736" y="184" width="6" height="8" fill="#a0b5cc"/>
+<rect x="742" y="184" width="6" height="8" fill="#c2d1e0"/>
+<rect x="748" y="184" width="6" height="8" fill="#a2b7cd"/>
+<rect x="754" y="184" width="6" height="8" fill="#9eb4cb"/>
+<rect x="760" y="184" width="6" height="8" fill="#c7d4e2"/>
+<rect x="766" y="184" width="6" height="8" fill="#a0b5cc"/>
+<rect x="772" y="184" width="6" height="8" fill="#90a8c3"/>
+<rect x="778" y="184" width="6" height="8" fill="#9cb2ca"/>
+<path d="M724 184v8 M730 184v8 M736 184v8 M742 184v8 M748 184v8 M754 184v8 M760 184v8 M766 184v8 M772 184v8 M778 184v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="718" y="184" width="66" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="718" y="193" width="6" height="8" fill="#e4c88a"/>
+<rect x="724" y="193" width="6" height="8" fill="#e2c482"/>
+<rect x="730" y="193" width="6" height="8" fill="#e1c380"/>
+<rect x="736" y="193" width="6" height="8" fill="#e4c889"/>
+<rect x="742" y="193" width="6" height="8" fill="#e0c17c"/>
+<rect x="748" y="193" width="6" height="8" fill="#e0c17c"/>
+<rect x="754" y="193" width="6" height="8" fill="#e1c27f"/>
+<rect x="760" y="193" width="6" height="8" fill="#e1c380"/>
+<rect x="766" y="193" width="6" height="8" fill="#e1c381"/>
+<rect x="772" y="193" width="6" height="8" fill="#e5c98b"/>
+<rect x="778" y="193" width="6" height="8" fill="#e4c889"/>
+<path d="M724 193v8 M730 193v8 M736 193v8 M742 193v8 M748 193v8 M754 193v8 M760 193v8 M766 193v8 M772 193v8 M778 193v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="718" y="193" width="66" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<line class="row-rule" x1="709" y1="203" x2="893" y2="203"/>
+<rect x="718" y="206" width="6" height="8" fill="#90a8c2"/>
+<rect x="724" y="206" width="6" height="8" fill="#9bb1c9"/>
+<rect x="730" y="206" width="6" height="8" fill="#b6c7d9"/>
+<rect x="736" y="206" width="6" height="8" fill="#c3d1e0"/>
+<rect x="742" y="206" width="6" height="8" fill="#a3b7cd"/>
+<rect x="748" y="206" width="6" height="8" fill="#9fb4cb"/>
+<rect x="754" y="206" width="6" height="8" fill="#becddd"/>
+<rect x="760" y="206" width="6" height="8" fill="#99afc7"/>
+<rect x="766" y="206" width="6" height="8" fill="#aec0d4"/>
+<rect x="772" y="206" width="6" height="8" fill="#c1d0df"/>
+<rect x="778" y="206" width="6" height="8" fill="#bfcedd"/>
+<rect x="784" y="206" width="6" height="8" fill="#aabdd1"/>
+<rect x="790" y="206" width="6" height="8" fill="#c7d5e2"/>
+<path d="M724 206v8 M730 206v8 M736 206v8 M742 206v8 M748 206v8 M754 206v8 M760 206v8 M766 206v8 M772 206v8 M778 206v8 M784 206v8 M790 206v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="718" y="206" width="78" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect x="718" y="215" width="6" height="8" fill="#e1c27e"/>
+<rect x="724" y="215" width="6" height="8" fill="#e3c788"/>
+<rect x="730" y="215" width="6" height="8" fill="#e4c88a"/>
+<rect x="736" y="215" width="6" height="8" fill="#e2c583"/>
+<rect x="742" y="215" width="6" height="8" fill="#e4c889"/>
+<rect x="748" y="215" width="6" height="8" fill="#e0c17d"/>
+<rect x="754" y="215" width="6" height="8" fill="#e1c381"/>
+<rect x="760" y="215" width="6" height="8" fill="#e0c17c"/>
+<rect x="766" y="215" width="6" height="8" fill="#e3c685"/>
+<rect x="772" y="215" width="6" height="8" fill="#e6cb8f"/>
+<rect x="778" y="215" width="6" height="8" fill="#e2c482"/>
+<rect x="784" y="215" width="6" height="8" fill="#debd76"/>
+<rect x="790" y="215" width="6" height="8" fill="#e0c17c"/>
+<path d="M724 215v8 M730 215v8 M736 215v8 M742 215v8 M748 215v8 M754 215v8 M760 215v8 M766 215v8 M772 215v8 M778 215v8 M784 215v8 M790 215v8" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.7"/>
+<rect x="718" y="215" width="78" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<text class="more" x="748" y="235">⋮</text>
+<line class="arrow" x1="729" y1="255" x2="729" y2="340"/>
+<path class="head" d="M725 339L729 346L733 339Z"/>
+<text class="note" x="744" y="326">compute properties</text>
+<rect class="card" x="708" y="354" width="310" height="185" rx="4"/>
+<path class="card-head" d="M708 376V358Q708 354 712 354H1014Q1018 354 1018 358V376Z"/>
+<line class="card-rule" x1="708" y1="376" x2="1018" y2="376"/>
+<text class="folder" x="718" y="369">ProstT5Dataset_len50_70_diffusion/</text>
+<path class="tree" d="M722 386V515M722 390H729M722 483H729M722 515H729"/>
+<text class="tree-dir" x="732" y="394">train/</text>
+<text class="split-count" x="782" y="394">1,505,527 proteins</text>
+<text class="npy aa-ink" x="732" y="410">aa.npy</text>
+<rect class="npy-file" x="732" y="415" width="86" height="52" rx="2"/>
+<text class="more" x="752" y="462">⋮</text>
+<text class="npy di-ink" x="824" y="410">threedi.npy</text>
+<rect class="npy-file" x="824" y="415" width="86" height="52" rx="2"/>
+<text class="more" x="844" y="462">⋮</text>
+<text class="npy " x="916" y="410">properties.npy</text>
+<rect class="npy-file" x="916" y="415" width="92" height="52" rx="2"/>
+<text class="more" x="936" y="462">⋮</text>
+<rect x="736" y="419" width="3" height="8" fill="#92aac4"/>
+<rect x="739" y="419" width="3" height="8" fill="#95acc5"/>
+<rect x="742" y="419" width="3" height="8" fill="#aabdd1"/>
+<rect x="745" y="419" width="3" height="8" fill="#becddd"/>
+<rect x="748" y="419" width="3" height="8" fill="#8ca5c0"/>
+<rect x="751" y="419" width="3" height="8" fill="#95acc5"/>
+<rect x="754" y="419" width="3" height="8" fill="#99b0c8"/>
+<rect x="757" y="419" width="3" height="8" fill="#afc1d4"/>
+<rect x="760" y="419" width="3" height="8" fill="#c5d3e1"/>
+<rect x="763" y="419" width="3" height="8" fill="#9ab1c8"/>
+<rect x="766" y="419" width="3" height="8" fill="#91a9c3"/>
+<rect x="769" y="419" width="3" height="8" fill="#c6d4e2"/>
+<rect x="736" y="419" width="36" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect class="pad" x="772" y="419" width="42" height="8"/>
+<rect x="828" y="419" width="3" height="8" fill="#e3c787"/>
+<rect x="831" y="419" width="3" height="8" fill="#e3c787"/>
+<rect x="834" y="419" width="3" height="8" fill="#e5ca8d"/>
+<rect x="837" y="419" width="3" height="8" fill="#e2c584"/>
+<rect x="840" y="419" width="3" height="8" fill="#e5c98c"/>
+<rect x="843" y="419" width="3" height="8" fill="#e2c482"/>
+<rect x="846" y="419" width="3" height="8" fill="#ddbc74"/>
+<rect x="849" y="419" width="3" height="8" fill="#e3c685"/>
+<rect x="852" y="419" width="3" height="8" fill="#dfbf79"/>
+<rect x="855" y="419" width="3" height="8" fill="#e0c27e"/>
+<rect x="858" y="419" width="3" height="8" fill="#e5c98b"/>
+<rect x="861" y="419" width="3" height="8" fill="#e4c98a"/>
+<rect x="828" y="419" width="36" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<rect class="pad" x="864" y="419" width="42" height="8"/>
+<text class="prop-text" x="929" y="426.5">62</text>
+<text class="prop-text" x="959" y="426.5">+4.0</text>
+<text class="prop-text" x="991" y="426.5">−0.02</text>
+<rect x="736" y="431" width="3" height="8" fill="#d1dde8"/>
+<rect x="739" y="431" width="3" height="8" fill="#c5d3e1"/>
+<rect x="742" y="431" width="3" height="8" fill="#90a8c2"/>
+<rect x="745" y="431" width="3" height="8" fill="#a0b5cc"/>
+<rect x="748" y="431" width="3" height="8" fill="#c2d1e0"/>
+<rect x="751" y="431" width="3" height="8" fill="#a2b7cd"/>
+<rect x="754" y="431" width="3" height="8" fill="#9eb4cb"/>
+<rect x="757" y="431" width="3" height="8" fill="#c7d4e2"/>
+<rect x="760" y="431" width="3" height="8" fill="#a0b5cc"/>
+<rect x="763" y="431" width="3" height="8" fill="#90a8c3"/>
+<rect x="766" y="431" width="3" height="8" fill="#9cb2ca"/>
+<rect x="736" y="431" width="33" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect class="pad" x="769" y="431" width="45" height="8"/>
+<rect x="828" y="431" width="3" height="8" fill="#e4c88a"/>
+<rect x="831" y="431" width="3" height="8" fill="#e2c482"/>
+<rect x="834" y="431" width="3" height="8" fill="#e1c380"/>
+<rect x="837" y="431" width="3" height="8" fill="#e4c889"/>
+<rect x="840" y="431" width="3" height="8" fill="#e0c17c"/>
+<rect x="843" y="431" width="3" height="8" fill="#e0c17c"/>
+<rect x="846" y="431" width="3" height="8" fill="#e1c27f"/>
+<rect x="849" y="431" width="3" height="8" fill="#e1c380"/>
+<rect x="852" y="431" width="3" height="8" fill="#e1c381"/>
+<rect x="855" y="431" width="3" height="8" fill="#e5c98b"/>
+<rect x="858" y="431" width="3" height="8" fill="#e4c889"/>
+<rect x="828" y="431" width="33" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<rect class="pad" x="861" y="431" width="45" height="8"/>
+<text class="prop-text" x="929" y="438.5">55</text>
+<text class="prop-text" x="959" y="438.5">+1.2</text>
+<text class="prop-text" x="991" y="438.5">−0.08</text>
+<rect x="736" y="443" width="3" height="8" fill="#90a8c2"/>
+<rect x="739" y="443" width="3" height="8" fill="#9bb1c9"/>
+<rect x="742" y="443" width="3" height="8" fill="#b6c7d9"/>
+<rect x="745" y="443" width="3" height="8" fill="#c3d1e0"/>
+<rect x="748" y="443" width="3" height="8" fill="#a3b7cd"/>
+<rect x="751" y="443" width="3" height="8" fill="#9fb4cb"/>
+<rect x="754" y="443" width="3" height="8" fill="#becddd"/>
+<rect x="757" y="443" width="3" height="8" fill="#99afc7"/>
+<rect x="760" y="443" width="3" height="8" fill="#aec0d4"/>
+<rect x="763" y="443" width="3" height="8" fill="#c1d0df"/>
+<rect x="766" y="443" width="3" height="8" fill="#bfcedd"/>
+<rect x="769" y="443" width="3" height="8" fill="#aabdd1"/>
+<rect x="772" y="443" width="3" height="8" fill="#c7d5e2"/>
+<rect x="736" y="443" width="39" height="8" fill="none" stroke="#7d95b8" stroke-width="0.8"/>
+<rect class="pad" x="775" y="443" width="39" height="8"/>
+<rect x="828" y="443" width="3" height="8" fill="#e1c27e"/>
+<rect x="831" y="443" width="3" height="8" fill="#e3c788"/>
+<rect x="834" y="443" width="3" height="8" fill="#e4c88a"/>
+<rect x="837" y="443" width="3" height="8" fill="#e2c583"/>
+<rect x="840" y="443" width="3" height="8" fill="#e4c889"/>
+<rect x="843" y="443" width="3" height="8" fill="#e0c17d"/>
+<rect x="846" y="443" width="3" height="8" fill="#e1c381"/>
+<rect x="849" y="443" width="3" height="8" fill="#e0c17c"/>
+<rect x="852" y="443" width="3" height="8" fill="#e3c685"/>
+<rect x="855" y="443" width="3" height="8" fill="#e6cb8f"/>
+<rect x="858" y="443" width="3" height="8" fill="#e2c482"/>
+<rect x="861" y="443" width="3" height="8" fill="#debd76"/>
+<rect x="864" y="443" width="3" height="8" fill="#e0c17c"/>
+<rect x="828" y="443" width="39" height="8" fill="none" stroke="#b8902f" stroke-width="0.8"/>
+<rect class="pad" x="867" y="443" width="39" height="8"/>
+<text class="prop-text" x="929" y="450.5">67</text>
+<text class="prop-text" x="959" y="450.5">−5.0</text>
+<text class="prop-text" x="991" y="450.5">0.21</text>
+<text class="tree-dir" x="732" y="487">valid/</text>
+<text class="split-count" x="732" y="499">100 proteins</text>
+<path class="page" fill="#b3c6e0" d="M776 478H781L784 481V488H776Z"/>
+<path class="page-fold" d="M781 478V481H784"/>
+<text class="tree-file aa-ink" x="788" y="487">aa.npy</text>
+<path class="page" fill="#e8c66c" d="M830.12 478H835.12L838.12 481V488H830.12Z"/>
+<path class="page-fold" d="M835.12 478V481H838.12"/>
+<text class="tree-file di-ink" x="842.12" y="487">threedi.npy</text>
+<path class="page" fill="#ffffff" d="M914.34 478H919.34L922.34 481V488H914.34Z"/>
+<path class="page-fold" d="M919.34 478V481H922.34"/>
+<text class="tree-file " x="926.34" y="487">properties.npy</text>
+<text class="tree-dir" x="732" y="519">test/</text>
+<text class="split-count" x="732" y="531">92 proteins</text>
+<path class="page" fill="#b3c6e0" d="M776 510H781L784 513V520H776Z"/>
+<path class="page-fold" d="M781 510V513H784"/>
+<text class="tree-file aa-ink" x="788" y="519">aa.npy</text>
+<path class="page" fill="#e8c66c" d="M830.12 510H835.12L838.12 513V520H830.12Z"/>
+<path class="page-fold" d="M835.12 510V513H838.12"/>
+<text class="tree-file di-ink" x="842.12" y="519">threedi.npy</text>
+<path class="page" fill="#ffffff" d="M914.34 510H919.34L922.34 513V520H914.34Z"/>
+<path class="page-fold" d="M919.34 510V513H922.34"/>
+<text class="tree-file " x="926.34" y="519">properties.npy</text>
+<text class="count" x="708" y="559">memory-mapped, padded to 128</text>
+</svg>

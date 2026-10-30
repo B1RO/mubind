@@ -1,0 +1,211 @@
+{
+  "data": {
+    "path": "",
+    "batch_size": 1024,
+    "num_workers": 2,
+    "normalize_embeddings": true,
+    "joint_3di": true,
+    "drop_last": true,
+    "property_definition": "omegamp_modlamp_v1"
+  },
+  "backbone": {
+    "max_length": 70,
+    "x_channels": 8,
+    "hidden_channels": 32,
+    "channel_mults": [
+      1,
+      2,
+      4
+    ],
+    "cond_dim": 128,
+    "blocks_per_level": 3,
+    "attention_mode": "unet_linear",
+    "attention_heads": 4
+  },
+  "structure": {
+    "vocab_size": 21,
+    "dim": 128,
+    "representation": "foldseek_2d",
+    "multiscale": true,
+    "infer_missing": true,
+    "context": {
+      "layers": 4,
+      "heads": 4,
+      "feedforward_dim": 512,
+      "dropout": 0.0
+    },
+    "cross_attention": {
+      "heads": 4,
+      "dim_head": 32,
+      "bottleneck": true
+    }
+  },
+  "properties": {
+    "mask_enabled": true,
+    "mean": null,
+    "std": null
+  },
+  "diffusion": {
+    "timesteps": 1000,
+    "schedule": "cosine",
+    "objective": "pred_x0",
+    "loss_weighting": "uniform"
+  },
+  "tasks": {
+    "layout_probabilities": [
+      0.35,
+      0.05,
+      0.05,
+      0.05,
+      0.5
+    ],
+    "redesign_conditioning_probabilities": [
+      0.05,
+      0.15,
+      0.2,
+      0.6
+    ],
+    "visible_min_fraction": 0.35,
+    "visible_max_fraction": 0.8,
+    "span_count_geometric_probability": 0.5,
+    "dirichlet_concentration": 0.5,
+    "editable_3di_retention_probability": 0.5,
+    "terminal_pad_min": 0,
+    "terminal_pad_max": 0,
+    "global_offset_probability": 0.0,
+    "left_align_threedi_redesign": true,
+    "stages": [
+      {
+        "until_step": 150000,
+        "layout_probabilities": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "redesign_conditioning_probabilities": [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      },
+      {
+        "until_step": 200000,
+        "layout_probabilities": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "redesign_conditioning_probabilities": [
+          0.05,
+          0.15,
+          0.2,
+          0.6
+        ]
+      }
+    ]
+  },
+  "threedi_masking": {
+    "enabled": true,
+    "full_probability": 0.0,
+    "visible_min_fraction": 0.0,
+    "visible_max_fraction": 1.0,
+    "mode": "multiple_spans",
+    "span_count_geometric_probability": 0.5,
+    "dirichlet_concentration": 0.5
+  },
+  "property_dropout": {
+    "enabled": true,
+    "mode": "uniform_subset",
+    "probability": 0.25,
+    "allow_empty": true
+  },
+  "optimizer": {
+    "name": "adamw",
+    "lr": 0.001,
+    "weight_decay": 0.01,
+    "scheduler_gamma": 0.9999994759735578,
+    "grad_clip": null
+  },
+  "ema": {
+    "enabled": true,
+    "decay": 0.999,
+    "warmup": true
+  },
+  "reconstruction": {
+    "pad_weighting": "class_equal",
+    "pad_weight": 1.0,
+    "example_weighting": "uniform"
+  },
+  "self_condition": {
+    "enabled": true,
+    "probability": 0.5
+  },
+  "timestep_sampling": {
+    "mode": "uniform",
+    "high_noise_start": 0.75,
+    "high_noise_probability": 0.5
+  },
+  "evaluation": {
+    "regime": "full",
+    "sampling": {
+      "sampler": "ddim",
+      "steps": 50,
+      "ddim_eta": 0.0
+    },
+    "denoising": {
+      "enabled": true,
+      "every": 1000,
+      "batches": 3,
+      "batch_size": 1024,
+      "noise_samples": 4,
+      "noise_bins": 10,
+      "seed": 20260910,
+      "threedi_utilization": true,
+      "utilization_count": 100,
+      "utilization_batch_size": 128,
+      "utilization_cohort_seed": 20260839,
+      "utilization_noise_seed": 20260841,
+      "high_noise_start": 0.75
+    },
+    "folding": {
+      "endpoint": "auto",
+      "models_dir": null,
+      "device": "auto",
+      "foldseek": "foldseek",
+      "reference_manifest": null,
+      "reference_root": null,
+      "cache_dir": null,
+      "timeout": 1800.0,
+      "seed": 0,
+      "protocol": {
+        "model": "biohub/ESMFold2-Fast",
+        "esmc_model": "biohub/ESMC-6B",
+        "revision": "c6c7958d63f5f2f1f0fed0bb9462316f8ccceea6",
+        "num_loops": 3,
+        "num_sampling_steps": 20,
+        "num_diffusion_samples": 1
+      }
+    },
+    "run_on_start": false,
+    "run_on_resume": true,
+    "suites": {}
+  },
+  "seed": 20260910,
+  "steps": 300000,
+  "device": "auto",
+  "precision": "bf16",
+  "log_every": 100,
+  "save_every": 1000,
+  "val_every": 1000,
+  "val_batches": 3,
+  "validation_seed": 20260910,
+  "out": "artifacts/checkpoints/diffusion.pt",
+  "batched_tasks": true,
+  "compile": true,
+  "compile_mode": "reduce-overhead"
+}
