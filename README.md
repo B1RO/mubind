@@ -1,6 +1,8 @@
 # mubind
 
-![mubind animation](docs/assets/mubind-animation-1.gif)
+[Project page](https://b1ro.github.io/mubind/) · [Documentation](https://b1ro.github.io/mubind/documentation.html#/) · [Presentation](https://b1ro.github.io/mubind/minibinder-presentation-audience.pdf) · [Hugging Face](https://huggingface.co/spaces/b1ro/mubind) · [Code](https://github.com/B1RO/mubind)
+
+<img src="docs/assets/mubind-animation-transparent.webp" alt="mubind animation" width="480">
 
 This repository presents a pipeline for designing minibinders for a chosen target protein, with control over length, net charge, and hydrophobicity. At its core is our generative model, trained to design amino acid sequences that meet both structural and biochemical requirements. This allows you to design minibinders with practical concerns such as solubility and aggregation in mind, alongside binding to the target.
 
@@ -71,7 +73,7 @@ The training menu lets you configure and start a new run or resume from a saved 
 
 ## Documentation
 
-- [CLI](docs/cli.md)
+- [CLI](docs/cli.md) covers commands, interactive menus and saved settings.
 - [Generation](docs/generation.md) covers preparing targets, choosing design options and interpreting results.
 - [Training](docs/training.md) covers preparing data, configuring runs and evaluating the model.
 - [Evaluation](docs/evaluation.md) covers running benchmarks, interpreting metrics and comparing results with the paper.
