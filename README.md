@@ -1,6 +1,6 @@
 # mubind
 
-[Project page](https://b1ro.github.io/mubind/) · [Documentation](https://b1ro.github.io/mubind/documentation.html#/) · [Presentation](https://b1ro.github.io/mubind/minibinder-presentation-audience.pdf) · [Hugging Face](https://huggingface.co/spaces/b1ro/mubind) · [Code](https://github.com/B1RO/mubind)
+[Repository](https://github.com/B1RO/mubind) · [Presentation](https://b1ro.github.io/mubind/minibinder-presentation-audience.pdf) · [Documentation](https://b1ro.github.io/mubind/documentation.html#/) · [Hugging Face](https://huggingface.co/spaces/b1ro/mubind) · [GH Page](https://b1ro.github.io/mubind/)
 
 <img src="docs/assets/mubind-animation-transparent.webp" alt="mubind animation" width="480">
 
