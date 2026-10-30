@@ -1,12 +1,12 @@
 # mubind
 
-[Repository](https://github.com/B1RO/mubind) · [Presentation](https://b1ro.github.io/mubind/minibinder-presentation-audience.pdf) · [Documentation](https://b1ro.github.io/mubind/documentation.html#/) · [Hugging Face](https://huggingface.co/spaces/b1ro/mubind) · [GH Page](https://b1ro.github.io/mubind/)
+[Repository](https://github.com/B1RO/mubind) · [Paper](docs/medicinal_project_report.pdf) · [Presentation](https://b1ro.github.io/mubind/minibinder-presentation-audience.pdf) · [Documentation](https://b1ro.github.io/mubind/documentation.html#/) · [Hugging Face](https://huggingface.co/spaces/b1ro/mubind) · [GH Page](https://b1ro.github.io/mubind/)
 
 <img src="docs/assets/mubind-animation-transparent.webp" alt="mubind animation" width="480">
 
 This repository presents a pipeline for designing minibinders for a chosen target protein, with control over length, net charge, and hydrophobicity. At its core is our generative model, trained to design amino acid sequences that meet both structural and biochemical requirements. This allows you to design minibinders with practical concerns such as solubility and aggregation in mind, alongside binding to the target.
 
-If you’d like to learn more about this work, see the [project page](https://b1ro.github.io/mubind/) or [presentation](docs/minibinder-presentation-audience.pdf).
+If you’d like to learn more about this work, see the [paper](docs/medicinal_project_report.pdf), [project page](https://b1ro.github.io/mubind/) or [presentation](docs/minibinder-presentation-audience.pdf).
 
 ## Quickstart
 
@@ -82,4 +82,4 @@ The training menu lets you configure and start a new run or resume from a saved 
 
 ## Acknowledgements
 
-The approach taken in this work builds upon OmegAMP and many others. Please see the paper for the full set of citations. We’d also like to express our gratitude to Leon Hetzel for supervising this project.
+The approach taken in this work builds upon OmegAMP and many others. Please see the [paper](docs/medicinal_project_report.pdf) for the full set of citations. We’d also like to express our gratitude to Leon Hetzel for supervising this project.
