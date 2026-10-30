@@ -6,7 +6,7 @@
 
 This repository presents a pipeline for designing minibinders for a chosen target protein, with control over length, net charge, and hydrophobicity. At its core is our generative model, trained to design amino acid sequences that meet both structural and biochemical requirements. This allows you to design minibinders with practical concerns such as solubility and aggregation in mind, alongside binding to the target.
 
-If you’d like to learn more about this work, see the [paper](docs/medicinal_project_report.pdf), [project page](https://b1ro.github.io/mubind/) or [presentation](docs/minibinder-presentation-audience.pdf).
+If you’d like to learn more about this work, see the [paper](docs/medicinal_project_report.pdf), [presentation](docs/minibinder-presentation-audience.pdf) or [documentation](https://b1ro.github.io/mubind/documentation.html#/).
 
 ## Quickstart
 
